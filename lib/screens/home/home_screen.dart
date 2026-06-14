@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
               ),
               child: const Column(
                 children: [
-                  Icon(Icons.motorcycle, color: Colors.white, size: 70),
+                  Image(image: AssetImage("lib/Assets/Motos.png"), height: 140),
                   SizedBox(height: 10),
                   Text(
                     "Bienvenido a MotoCheck",
