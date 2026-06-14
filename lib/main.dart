@@ -10,6 +10,11 @@ class MotoCheckApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginScreen());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'MotoCheck App',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const LoginScreen(),
+    );
   }
 }

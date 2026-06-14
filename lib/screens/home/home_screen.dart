@@ -1,5 +1,7 @@
+// Archivo: lib/screens/home/home_screen.dart
 import 'package:flutter/material.dart';
 import '../login/login_screen.dart';
+import '../vehiculos/agregar_vehiculo_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -8,7 +10,6 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-
       appBar: AppBar(
         backgroundColor: const Color(0xFF1565C0),
         title: const Text(
@@ -29,12 +30,11 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Column(
           children: [
+            // Cabecera con Imagen
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -63,9 +63,9 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 25),
 
+            // Tarjetas informativas
             Row(
               children: [
                 Expanded(
@@ -87,9 +87,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 15),
-
             Row(
               children: [
                 Expanded(
@@ -111,14 +109,21 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-
             const SizedBox(height: 30),
 
+            // Botón Registrar Vehículo
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AgregarVehiculoScreen(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.add),
                 label: const Text(
                   "Registrar Vehículo",
@@ -136,7 +141,6 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: const Color(0xFF1565C0),
         unselectedItemColor: Colors.grey,

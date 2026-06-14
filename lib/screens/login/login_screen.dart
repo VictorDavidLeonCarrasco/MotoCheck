@@ -25,8 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Iniciando sesión como $_selectedRole...')),
       );
-
-      // Navegación hacia el Home
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -65,13 +63,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 20),
 
                     DropdownButtonFormField<String>(
-                      initialValue:
-                          _selectedRole, // Corregido: initialValue en vez de value
+                      initialValue: _selectedRole,
                       decoration: const InputDecoration(
                         labelText: 'Perfil de Usuario',
                         border: OutlineInputBorder(),
@@ -95,34 +91,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Correo Electrónico',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
                       ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingrese su correo';
-                        }
-                        return null;
-                      },
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'Ingrese su correo'
+                          : null,
                     ),
                     const SizedBox(height: 15),
-
                     TextFormField(
                       decoration: const InputDecoration(
                         labelText: 'Contraseña',
                         border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
                       ),
                       obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        }
-                        return null;
-                      },
+                      validator: (value) => (value == null || value.isEmpty)
+                          ? 'Ingrese su contraseña'
+                          : null,
                     ),
                     const SizedBox(height: 20),
-
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -131,9 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
                         ),
                         child: const Text(
                           'Ingresar',
@@ -145,8 +127,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 10),
-
-                    // Botón para ir a la pantalla de Registro
                     TextButton(
                       onPressed: () {
                         Navigator.push(
