@@ -10,13 +10,6 @@ class MotoCheckApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
-    );
+    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginScreen());
   }
 }
-erick MEdina. 
-como van. todos ya estan activos hoy dia no se duerme  porque por lo visto vamos demorar
-
-Hola a todos!!
