@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,16 +19,15 @@ class _LoginScreenState extends State<LoginScreen> {
   ];
 
   void _iniciarSesion() {
+    // Validación básica de formularios
     if (_formKey.currentState!.validate()) {
+      // Aquí integrarías el consumo de API REST  o SQLite
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Iniciando sesión como $_selectedRole...')),
       );
 
-      // Navegación hacia el Home
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+      // Aquí iría la navegación hacia el Menú principal
+      // Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
@@ -39,45 +37,38 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.grey[200],
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding: EdgeInsets.all(20.0),
           child: Card(
+            // Uso de Card sugerido en los requisitos
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(20.0),
+              padding: EdgeInsets.all(20.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.two_wheeler,
-                      size: 80,
-                      color: Colors.blueAccent,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'MOTOCHECK',
+                    Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
+                    SizedBox(height: 20),
+                    Text(
+                      'Control de Mantenimiento',
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const Text(
-                      'Control de Mantenimiento',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
+                    // Selección de usuario
                     DropdownButtonFormField<String>(
                       initialValue: _selectedRole,
-                      decoration: const InputDecoration(
-                        labelText: 'Perfil de Usuario',
+                      decoration: InputDecoration(
+                        labelText:
+                            'Perfil de Usuario', // Componente InputFields
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person_outline),
                       ),
@@ -93,39 +84,41 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       },
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15),
 
                     TextFormField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Correo Electrónico',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
+                        // Validación básica de formulario
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su correo';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 15),
+                    SizedBox(height: 15),
 
                     TextFormField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Contraseña',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock),
                       ),
                       obscureText: true,
                       validator: (value) {
+                        // Validación básica de formulario
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su contraseña';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     SizedBox(
                       width: double.infinity,
@@ -133,19 +126,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: ElevatedButton(
                         onPressed: _iniciarSesion,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Text(
-                          'Ingresar',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: Text('Ingresar', style: TextStyle(fontSize: 18)),
                       ),
                     ),
                   ],
