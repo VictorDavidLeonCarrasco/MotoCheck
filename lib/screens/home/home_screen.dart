@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../login/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -15,6 +16,18 @@ class HomeScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Cerrar sesión',
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+              );
+            },
+          ),
+        ],
       ),
 
       body: SingleChildScrollView(
@@ -63,9 +76,7 @@ class HomeScreen extends StatelessWidget {
                     Colors.blue,
                   ),
                 ),
-
                 const SizedBox(width: 15),
-
                 Expanded(
                   child: _buildCard(
                     Icons.build,
@@ -89,9 +100,7 @@ class HomeScreen extends StatelessWidget {
                     Colors.green,
                   ),
                 ),
-
                 const SizedBox(width: 15),
-
                 Expanded(
                   child: _buildCard(
                     Icons.warning,
@@ -165,14 +174,11 @@ class HomeScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, color: color, size: 40),
-
           const SizedBox(height: 10),
-
           Text(
             cantidad,
             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
           ),
-
           Text(titulo, style: const TextStyle(fontSize: 15)),
         ],
       ),

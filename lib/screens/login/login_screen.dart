@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import '../home/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   String _selectedRole = 'Conductor';
 
-  // Lista de usuarios principales según el caso
   final List<String> _roles = [
     'Conductor',
     'Dueño de vehículo',
@@ -18,15 +20,16 @@ class _LoginScreenState extends State<LoginScreen> {
   ];
 
   void _iniciarSesion() {
-    // Validación básica de formularios
     if (_formKey.currentState!.validate()) {
-      // Aquí integrarías el consumo de API REST  o SQLite
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Iniciando sesión como $_selectedRole...')),
       );
 
-      // Aquí iría la navegación hacia el Menú principal
-      // Navigator.pushReplacementNamed(context, '/home');
+      // Navegación hacia el Home
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     }
   }
 
@@ -36,38 +39,45 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.grey[200],
       body: Center(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(20.0),
           child: Card(
-            // Uso de Card sugerido en los requisitos
             elevation: 5,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
             ),
             child: Padding(
-              padding: EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(20.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
-                    SizedBox(height: 20),
-                    Text(
-                      'Control de Mantenimiento',
+                    const Icon(
+                      Icons.two_wheeler,
+                      size: 80,
+                      color: Colors.blueAccent,
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'MOTOCHECK',
                       style: TextStyle(
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 20),
+                    const Text(
+                      'Control de Mantenimiento',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
 
-                    // Selección de usuario
                     DropdownButtonFormField<String>(
-                      value: _selectedRole,
-                      decoration: InputDecoration(
-                        labelText:
-                            'Perfil de Usuario', // Componente InputFields
+                      initialValue: _selectedRole,
+                      decoration: const InputDecoration(
+                        labelText: 'Perfil de Usuario',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person_outline),
                       ),
@@ -83,51 +93,57 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       },
                     ),
-                    SizedBox(height: 15),
+                    const SizedBox(height: 15),
 
                     TextFormField(
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Correo Electrónico',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        // Validación básica de formulario
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su correo';
                         }
                         return null;
                       },
                     ),
-                    SizedBox(height: 15),
+                    const SizedBox(height: 15),
 
                     TextFormField(
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Contraseña',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock),
                       ),
                       obscureText: true,
                       validator: (value) {
-                        // Validación básica de formulario
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su contraseña';
                         }
                         return null;
                       },
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
                         onPressed: _iniciarSesion,
-                        child: Text('Ingresar', style: TextStyle(fontSize: 18)),
                         style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Ingresar',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
