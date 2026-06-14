@@ -17,3 +17,8 @@ class MotoCheckApp extends StatelessWidget {
     );
   }
 }
+
+//  prueba de commit
+void main() {
+  runApp(const MotoCheckApp());
+}
