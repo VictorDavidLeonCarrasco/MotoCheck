@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'routes/app_routes.dart';
+import 'screens/login/login_screen.dart';
 
 void main() {
   runApp(const MotoCheckApp());
@@ -12,8 +12,7 @@ class MotoCheckApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      routes: AppRoutes.routes,
-      initialRoute: '/login',
+      home: LoginScreen(),
     );
   }
 }
