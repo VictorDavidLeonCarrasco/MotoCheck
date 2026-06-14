@@ -10,12 +10,12 @@ class MotoCheckApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
-    );
+    return MaterialApp(debugShowCheckedModeBanner: false, home: LoginScreen());
   }
 }
+<<<<<<< HEAD
 erick MEdina. 
 como van. todos ya estan activos hoy dia no se duerme  porque por lo visto vamos demorar 
  Chinguen a su madre todos los que se duermen hoy dia, vamos a estar activos hasta tarde, asi que a prepararse para una noche larga. Vamos a trabajar duro y lograr nuestros objetivos. ¡Vamos con todo!
+=======
+>>>>>>> 35087a11033c73738493c16f5ca46377b72ad7d7
