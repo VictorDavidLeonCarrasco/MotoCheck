@@ -1,6 +1,5 @@
+import 'package:control_de_mototaxis_o_taxis/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
-import '../home/home_screen.dart';
-import '../registro/registro_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,14 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _iniciarSesion() {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Iniciando sesión como $_selectedRole...'),
-          backgroundColor: const Color(0xFF1565C0),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -40,190 +31,111 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. Fondo con Degradado Profesional
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF42A5F5), // Azul claro
-              Color(0xFF1565C0), // Azul oscuro MotoCheck
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 25.0,
-              vertical: 40.0,
+      backgroundColor: Colors.grey[200],
+      body: Center(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(20.0),
+          child: Card(
+            // Uso de Card sugerido en los requisitos
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
             ),
-            child: Card(
-              elevation: 10, // Sombra más pronunciada
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25), // Bordes más suaves
-              ),
-              color: Colors.white.withValues(
-                alpha: 0.95,
-              ), // Blanco ligeramente translúcido
-              child: Padding(
-                padding: const EdgeInsets.all(30.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // 2. Uso del Logo Oficial
-                      const Image(
-                        image: AssetImage("lib/Assets/Motos.png"),
-                        height: 100,
-                        fit: BoxFit.contain,
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
+                    SizedBox(height: 20),
+                    Text(
+                      'Control de Mantenimiento',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 15),
-                      const Text(
-                        'MOTOCHECK',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1565C0),
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                      const Text(
-                        'Control de Mantenimiento',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20),
 
-                      // 3. Campos de Entrada Modernizados
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedRole,
-                        decoration: _inputStyle(
-                          'Perfil de Usuario',
-                          Icons.badge,
-                        ),
-                        items: _roles.map((String role) {
-                          return DropdownMenuItem<String>(
-                            value: role,
-                            child: Text(role),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            _selectedRole = newValue!;
-                          });
-                        },
+                    // Selección de usuario
+                    DropdownButtonFormField<String>(
+                      initialValue: _selectedRole,
+                      decoration: InputDecoration(
+                        labelText:
+                            'Perfil de Usuario', // Componente InputFields
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
-                      const SizedBox(height: 15),
+                      items: _roles.map((String role) {
+                        return DropdownMenuItem<String>(
+                          value: role,
+                          child: Text(role),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedRole = newValue!;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 15),
 
-                      TextFormField(
-                        decoration: _inputStyle(
-                          'Correo Electrónico',
-                          Icons.email_outlined,
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? 'Ingrese su correo'
-                            : null,
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Correo Electrónico',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email),
                       ),
-                      const SizedBox(height: 15),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        // Validación básica de formulario
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor ingrese su correo';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 15),
 
-                      TextFormField(
-                        decoration: _inputStyle(
-                          'Contraseña',
-                          Icons.lock_outline,
-                        ),
-                        obscureText: true,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? 'Ingrese su contraseña'
-                            : null,
+                    TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lock),
                       ),
-                      const SizedBox(height: 30),
+                      obscureText: true,
+                      validator: (value) {
+                        // Validación básica de formulario
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor ingrese su contraseña';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
 
-                      // 4. Botón Principal Mejorado
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _iniciarSesion,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(
-                              0xFFFFC107,
-                            ), // Amarillo vibrante
-                            foregroundColor: Colors.black87,
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                          child: const Text(
-                            'INGRESAR',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.0,
-                            ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _iniciarSesion,
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
+                        child: Text('Ingresar', style: TextStyle(fontSize: 18)),
                       ),
-                      const SizedBox(height: 15),
-
-                      // Botón de texto secundario
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const RegistroScreen(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF1565C0),
-                        ),
-                        child: const Text(
-                          '¿No tienes cuenta? Regístrate aquí',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // Widget reutilizable para el estilo de los inputs
-  InputDecoration _inputStyle(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: const Color(0xFF1565C0)),
-      filled: true,
-      fillColor: Colors.grey[100], // Fondo suave
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none, // Sin borde duro por defecto
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(
-          color: Color(0xFF1565C0),
-          width: 2,
-        ), // Borde azul al escribir
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
       ),
     );
   }
