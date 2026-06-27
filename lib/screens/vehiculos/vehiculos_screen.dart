@@ -1,9 +1,16 @@
+<<<<<<< Updated upstream
 class Vehiculo {
   int? id;
   String placa;
   String marca;
   String modelo;
   int anio;
+=======
+import 'package:control_de_mototaxis_o_taxis/screens/vehiculos/agregar_vehiculo_screen.dart';
+import 'package:flutter/material.dart';
+import '../../services/database_helper.dart';
+import '../home/home_screen.dart';
+>>>>>>> Stashed changes
 
   Vehiculo({
     this.id,
