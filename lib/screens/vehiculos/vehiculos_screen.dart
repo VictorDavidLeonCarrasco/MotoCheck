@@ -1,42 +1,28 @@
-<<<<<<< Updated upstream
-class Vehiculo {
-  int? id;
-  String placa;
-  String marca;
-  String modelo;
-  int anio;
-=======
 import 'package:control_de_mototaxis_o_taxis/screens/vehiculos/agregar_vehiculo_screen.dart';
 import 'package:flutter/material.dart';
-import '../../services/database_helper.dart';
+import '../database/database_helper.dart';
 import '../home/home_screen.dart';
->>>>>>> Stashed changes
 
-  Vehiculo({
-    this.id,
-    required this.placa,
-    required this.marca,
-    required this.modelo,
-    required this.anio,
-  });
+class VehiculosScreen extends StatefulWidget {
+  @override
+  State<VehiculosScreen> createState() => _VehiculosScreenState();
+}
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'placa': placa,
-      'marca': marca,
-      'modelo': modelo,
-      'anio': anio,
-    };
-  }
-
-  factory Vehiculo.fromMap(Map<String, dynamic> map) {
-    return Vehiculo(
-      id: map['id'],
-      placa: map['placa'],
-      marca: map['marca'],
-      modelo: map['modelo'],
-      anio: map['anio'],
+class _VehiculosScreenState extends State<VehiculosScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Vehículos')),
+      body: Center(child: Text('Pantalla de Vehículos')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AgregarVehiculoScreen()),
+          );
+        },
+        child: Icon(Icons.add),
+      ),
     );
   }
 }
