@@ -1,146 +1,115 @@
-import 'package:control_de_mototaxis_o_taxis/screens/vehiculos/agregar_vehiculo_screen.dart';
 import 'package:flutter/material.dart';
-import '../../database/database_helper.dart';
-import '../../models/vehiculo.dart';
+import '../login/login_screen.dart';
 
-class VehiculosScreen extends StatefulWidget {
-  const VehiculosScreen({super.key});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<VehiculosScreen> createState() => _VehiculosScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _VehiculosScreenState extends State<VehiculosScreen> {
-  List<Vehiculo> _todosLosVehiculos = [];
-  List<Vehiculo> _vehiculosFiltrados = [];
-  bool _cargando = true;
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+  late final Animation<double> _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
-    _cargarVehiculos();
-  }
 
-  Future<void> _cargarVehiculos() async {
-    final vehiculos = await DatabaseHelper.obtenerVehiculos();
-    setState(() {
-      _todosLosVehiculos = vehiculos;
-      _vehiculosFiltrados = vehiculos;
-      _cargando = false;
-    });
-  }
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
 
-  void _filtrarBusqueda(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _vehiculosFiltrados = _todosLosVehiculos;
-      } else {
-        final lowerQuery = query.toLowerCase();
-        _vehiculosFiltrados = _todosLosVehiculos.where((v) {
-          return v.placa.toLowerCase().contains(lowerQuery) ||
-              v.marca.toLowerCase().contains(lowerQuery);
-        }).toList();
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+
+    _opacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+
+    _controller.forward();
+
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
       }
     });
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vehículos'),
-        backgroundColor: const Color(0xFF1565C0),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(15.0),
-            child: TextField(
-              onChanged: _filtrarBusqueda,
-              decoration: InputDecoration(
-                labelText: 'Buscar por placa o marca...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+      backgroundColor: Colors.blue[800],
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ScaleTransition(
+                scale: _scaleAnimation,
+                child: Container(
+                  padding: const EdgeInsets.all(24.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.two_wheeler,
+                    size: 72,
+                    color: Colors.blueAccent,
+                  ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: _cargando
-                ? const Center(child: CircularProgressIndicator())
-                : _vehiculosFiltrados.isEmpty
-                ? const Center(child: Text('No se encontraron vehículos.'))
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    itemCount: _vehiculosFiltrados.length,
-                    itemBuilder: (context, index) {
-                      final v = _vehiculosFiltrados[index];
-                      return Card(
-                        elevation: 2,
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.all(15),
-                          leading: const CircleAvatar(
-                            backgroundColor: Color(0xFF1565C0),
-                            child: Icon(
-                              Icons.directions_car,
-                              color: Colors.white,
-                            ),
-                          ),
-                          title: Text(
-                            '${v.marca} ${v.modelo}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                          subtitle: Text('Placa: ${v.placa} | Año: ${v.anio}'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.orange,
-                                ),
-                                onPressed: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          AgregarVehiculoScreen(vehiculo: v),
-                                    ),
-                                  );
-                                  _cargarVehiculos();
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+              const SizedBox(height: 24),
+              FadeTransition(
+                opacity: _opacityAnimation,
+                child: const Text(
+                  'MotoCheck',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
                   ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              FadeTransition(
+                opacity: _opacityAnimation,
+                child: const Text(
+                  'Control de mantenimiento y flota',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 40),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFFFFC107),
-        child: const Icon(Icons.add, color: Colors.black),
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AgregarVehiculoScreen(),
-            ),
-          );
-          _cargarVehiculos();
-        },
+        ),
       ),
     );
   }

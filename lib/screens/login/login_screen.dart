@@ -13,6 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   String _selectedRole = 'Conductor';
 
+  // Lista de roles requeridos
   final List<String> _roles = [
     'Conductor',
     'Dueño de vehículo',
@@ -20,8 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
     'Administrador de flota',
   ];
 
+  // Función de inicio de sesión modificada para enviar el rol al HomeScreen
   void _iniciarSesion() {
-    if (_formKey.currentState?.validate() ?? false) {
+    if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Iniciando sesión como $_selectedRole...'),
@@ -30,11 +32,10 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
+      // Se pasa el '_selectedRole' a la propiedad 'rol' del HomeScreen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(rol: _selectedRole),
-        ),
+        MaterialPageRoute(builder: (context) => HomeScreen(rol: _selectedRole)),
       );
     }
   }
@@ -48,8 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF42A5F5),
-              Color(0xFF1565C0),
+              Color(0xFF42A5F5), // Azul claro
+              Color(0xFF1565C0), // Azul oscuro MotoCheck
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -66,7 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
-              color: Colors.white.withOpacity(0.95),
+              // Corregido con el estándar moderno .withValues
+              color: Colors.white.withValues(alpha: 0.95),
               child: Padding(
                 padding: const EdgeInsets.all(30.0),
                 child: Form(
@@ -74,24 +76,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Logo oficial de MotoCheck
                       const Image(
-                        image: AssetImage('lib/Assets/Motos.png'),
+                        image: AssetImage("lib/Assets/Motos.png"),
                         height: 100,
                         fit: BoxFit.contain,
                       ),
                       const SizedBox(height: 20),
-                      const Text(
-                        'Control de Mantenimiento',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
+
+                      // Dropdown del Perfil de Usuario
                       DropdownButtonFormField<String>(
-                        value: _selectedRole,
-                        decoration: _inputStyle('Perfil de Usuario', Icons.badge),
+                        initialValue: _selectedRole,
+                        decoration: _inputStyle(
+                          'Perfil de Usuario',
+                          Icons.badge,
+                        ),
                         items: _roles.map((String role) {
                           return DropdownMenuItem<String>(
                             value: role,
@@ -99,43 +98,49 @@ class _LoginScreenState extends State<LoginScreen> {
                           );
                         }).toList(),
                         onChanged: (String? newValue) {
-                          if (newValue != null) {
-                            setState(() {
-                              _selectedRole = newValue;
-                            });
-                          }
+                          setState(() {
+                            _selectedRole = newValue!;
+                          });
                         },
                       ),
                       const SizedBox(height: 15),
+
+                      // Campo Correo Electrónico
                       TextFormField(
-                        decoration: _inputStyle('Correo Electrónico', Icons.email_outlined),
+                        decoration: _inputStyle(
+                          'Correo Electrónico',
+                          Icons.email_outlined,
+                        ),
                         keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor ingrese su correo';
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Ingrese su correo'
+                            : null,
                       ),
                       const SizedBox(height: 15),
+
+                      // Campo Contraseña
                       TextFormField(
-                        decoration: _inputStyle('Contraseña', Icons.lock_outline),
+                        decoration: _inputStyle(
+                          'Contraseña',
+                          Icons.lock_outline,
+                        ),
                         obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor ingrese su contraseña';
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Ingrese su contraseña'
+                            : null,
                       ),
-                      const SizedBox(height: 25),
+                      const SizedBox(height: 20),
+
+                      // Botón Ingresar
                       SizedBox(
                         width: double.infinity,
                         height: 55,
                         child: ElevatedButton(
                           onPressed: _iniciarSesion,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFC107),
+                            backgroundColor: const Color(
+                              0xFFFFC107,
+                            ), // Amarillo
                             foregroundColor: Colors.black87,
                             elevation: 5,
                             shape: RoundedRectangleBorder(
@@ -153,6 +158,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 15),
+
+                      // Enlace a la pantalla de Registro
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -181,6 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // Estilo personalizado para los inputs
   InputDecoration _inputStyle(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
@@ -201,3 +209,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+}

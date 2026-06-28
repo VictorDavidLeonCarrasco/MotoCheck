@@ -2,12 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'screens/login/login_screen.dart';
-
 import 'screens/splash/splash_screen.dart';
-
 import 'providers/app_provider.dart';
-
 
 // Función para escuchar notificaciones cuando la app está en segundo plano
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -41,9 +37,8 @@ class MotoCheckApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MotoCheck App',
+      title: 'MotoCheck',
       debugShowCheckedModeBanner: false,
-
       // --- TEMA CLARO ---
       theme: ThemeData(
         brightness: Brightness.light,
@@ -71,7 +66,6 @@ class MotoCheckApp extends StatelessWidget {
       ),
       themeMode: ThemeMode.system, // Cambia automáticamente según el teléfono
       home: const SplashScreen(),
-
     );
   }
 }
