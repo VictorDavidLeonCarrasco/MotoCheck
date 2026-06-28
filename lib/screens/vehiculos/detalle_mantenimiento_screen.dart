@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import '../../database/database_helper.dart';
 import '../../models/mantenimiento.dart';
 
-class AgregarMantenimientoScreen extends StatefulWidget {
-  const AgregarMantenimientoScreen({super.key});
+class DetalleMantenimientoScreen extends StatefulWidget {
+  const DetalleMantenimientoScreen({super.key});
 
   @override
-  State<AgregarMantenimientoScreen> createState() =>
-      _AgregarMantenimientoScreenState();
+  State<DetalleMantenimientoScreen> createState() =>
+      _DetalleMantenimientoScreenState();
 }
 
-class _AgregarMantenimientoScreenState
-    extends State<AgregarMantenimientoScreen> {
+class _DetalleMantenimientoScreenState
+    extends State<DetalleMantenimientoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _placaController = TextEditingController();
   final _fallaController = TextEditingController();
@@ -39,7 +39,7 @@ class _AgregarMantenimientoScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Registrar Falla',
+          'Detalle del Mantenimiento',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFF1565C0),
