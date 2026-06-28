@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../login/login_screen.dart';
-import '../vehiculos/vehiculos_screen.dart';
+//import '../vehiculos/vehiculos_screen.dart';
 import '../mantenimientos/mantenimientos_screen.dart';
 import '../../providers/app_provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> pantallas = [
       HomeContent(onTabChange: _cambiarTab, rol: widget.rol),
-      const VehiculosScreen(),
+      //  const VehiculosScreen(),
       const MantenimientosScreen(),
     ];
 
