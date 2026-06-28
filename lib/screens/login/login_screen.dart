@@ -1,4 +1,5 @@
 import 'package:control_de_mototaxis_o_taxis/screens/home/home_screen.dart';
+import 'package:control_de_mototaxis_o_taxis/screens/registro/registro_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -20,10 +21,20 @@ class _LoginScreenState extends State<LoginScreen> {
   ];
 
   void _iniciarSesion() {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() ?? false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Iniciando sesión como $_selectedRole...'),
+          backgroundColor: const Color(0xFF1565C0),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(rol: _selectedRole),
+        ),
       );
     }
   }
@@ -31,106 +42,136 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
-      body: Center(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(20.0),
-          child: Card(
-            // Uso de Card sugerido en los requisitos
-            elevation: 5,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF42A5F5),
+              Color(0xFF1565C0),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 25.0,
+              vertical: 40.0,
             ),
-            child: Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.two_wheeler, size: 80, color: Colors.blueAccent),
-                    SizedBox(height: 20),
-                    Text(
-                      'Control de Mantenimiento',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+            child: Card(
+              elevation: 10,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+              color: Colors.white.withOpacity(0.95),
+              child: Padding(
+                padding: const EdgeInsets.all(30.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Image(
+                        image: AssetImage('lib/Assets/Motos.png'),
+                        height: 100,
+                        fit: BoxFit.contain,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 20),
-
-                    // Selección de usuario
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedRole,
-                      decoration: InputDecoration(
-                        labelText:
-                            'Perfil de Usuario', // Componente InputFields
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_outline),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Control de Mantenimiento',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      items: _roles.map((String role) {
-                        return DropdownMenuItem<String>(
-                          value: role,
-                          child: Text(role),
-                        );
-                      }).toList(),
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          _selectedRole = newValue!;
-                        });
-                      },
-                    ),
-                    SizedBox(height: 15),
-
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Correo Electrónico',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
+                      const SizedBox(height: 30),
+                      DropdownButtonFormField<String>(
+                        value: _selectedRole,
+                        decoration: _inputStyle('Perfil de Usuario', Icons.badge),
+                        items: _roles.map((String role) {
+                          return DropdownMenuItem<String>(
+                            value: role,
+                            child: Text(role),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _selectedRole = newValue;
+                            });
+                          }
+                        },
                       ),
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        // Validación básica de formulario
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingrese su correo';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 15),
-
-                    TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        decoration: _inputStyle('Correo Electrónico', Icons.email_outlined),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor ingrese su correo';
+                          }
+                          return null;
+                        },
                       ),
-                      obscureText: true,
-                      validator: (value) {
-                        // Validación básica de formulario
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor ingrese su contraseña';
-                        }
-                        return null;
-                      },
-                    ),
-                    SizedBox(height: 20),
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _iniciarSesion,
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        decoration: _inputStyle('Contraseña', Icons.lock_outline),
+                        obscureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Por favor ingrese su contraseña';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 25),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: _iniciarSesion,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFC107),
+                            foregroundColor: Colors.black87,
+                            elevation: 5,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          child: const Text(
+                            'INGRESAR',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.0,
+                            ),
                           ),
                         ),
-                        child: Text('Ingresar', style: TextStyle(fontSize: 18)),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 15),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RegistroScreen(),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF1565C0),
+                        ),
+                        child: const Text(
+                          '¿No tienes cuenta? Regístrate aquí',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -139,4 +180,24 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-}
+
+  InputDecoration _inputStyle(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: const Color(0xFF1565C0)),
+      filled: true,
+      fillColor: Colors.grey[100],
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: Color(0xFF1565C0), width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+      ),
+    );
+  }
