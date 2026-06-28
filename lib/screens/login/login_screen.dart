@@ -13,6 +13,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   String _selectedRole = 'Conductor';
 
+  // Lista de roles requeridos
   final List<String> _roles = [
     'Conductor',
     'Dueño de vehículo',
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
     'Administrador de flota',
   ];
 
+  // Función de inicio de sesión modificada para enviar el rol al HomeScreen
   void _iniciarSesion() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -30,9 +32,10 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
+      // PASO 4 CORREGIDO: Se pasa el '_selectedRole' a la propiedad 'rol' del HomeScreen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen(rol: _selectedRole)),
       );
     }
   }
@@ -40,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. Fondo con Degradado Profesional
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -61,13 +63,12 @@ class _LoginScreenState extends State<LoginScreen> {
               vertical: 40.0,
             ),
             child: Card(
-              elevation: 10, // Sombra más pronunciada
+              elevation: 10,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25), // Bordes más suaves
+                borderRadius: BorderRadius.circular(25),
               ),
-              color: Colors.white.withValues(
-                alpha: 0.95,
-              ), // Blanco ligeramente translúcido
+              // Corregido con el estándar moderno .withValues
+              color: Colors.white.withValues(alpha: 0.95),
               child: Padding(
                 padding: const EdgeInsets.all(30.0),
                 child: Form(
@@ -75,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 2. Uso del Logo Oficial
+                      // Logo oficial de MotoCheck
                       const Image(
                         image: AssetImage("lib/Assets/Motos.png"),
                         height: 100,
@@ -101,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 30),
 
-                      // 3. Campos de Entrada Modernizados
+                      // Dropdown del Perfil de Usuario
                       DropdownButtonFormField<String>(
                         initialValue: _selectedRole,
                         decoration: _inputStyle(
@@ -122,6 +123,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 15),
 
+                      // Campo Correo Electrónico
                       TextFormField(
                         decoration: _inputStyle(
                           'Correo Electrónico',
@@ -134,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 15),
 
+                      // Campo Contraseña
                       TextFormField(
                         decoration: _inputStyle(
                           'Contraseña',
@@ -146,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 30),
 
-                      // 4. Botón Principal Mejorado
+                      // Botón Ingresar
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -155,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(
                               0xFFFFC107,
-                            ), // Amarillo vibrante
+                            ), // Amarillo
                             foregroundColor: Colors.black87,
                             elevation: 5,
                             shape: RoundedRectangleBorder(
@@ -174,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 15),
 
-                      // Botón de texto secundario
+                      // Enlace a la pantalla de Registro
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -203,23 +206,20 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Widget reutilizable para el estilo de los inputs
+  // Estilo personalizado para los inputs
   InputDecoration _inputStyle(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
       prefixIcon: Icon(icon, color: const Color(0xFF1565C0)),
       filled: true,
-      fillColor: Colors.grey[100], // Fondo suave
+      fillColor: Colors.grey[100],
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide.none, // Sin borde duro por defecto
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(
-          color: Color(0xFF1565C0),
-          width: 2,
-        ), // Borde azul al escribir
+        borderSide: const BorderSide(color: Color(0xFF1565C0), width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
