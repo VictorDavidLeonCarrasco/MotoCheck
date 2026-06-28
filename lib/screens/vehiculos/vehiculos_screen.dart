@@ -1,8 +1,7 @@
 import 'package:control_de_mototaxis_o_taxis/screens/vehiculos/agregar_vehiculo_screen.dart';
 import 'package:flutter/material.dart';
-import '../database/database_helper.dart';
-import '../home/home_screen.dart';
 
+// ignore: use_key_in_widget_constructors
 class VehiculosScreen extends StatefulWidget {
   @override
   State<VehiculosScreen> createState() => _VehiculosScreenState();
