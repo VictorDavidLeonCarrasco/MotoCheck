@@ -20,17 +20,25 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Color _azulPrincipal = Color(0xFF1565C0);
   int _currentIndex = 0;
 
-  late final List<Widget> _pantallas;
+  // --- LÓGICA DE NIVELES DE USUARIO ---
+  // Determinamos si el usuario tiene permisos de Taller
+  bool get esPersonalTaller =>
+      widget.rol == 'Taller mecánico' || widget.rol == 'Administrador de flota';
+
+  // Construimos las pantallas dinámicamente. Si no es personal, solo carga 2.
+  List<Widget> get _pantallas => [
+    HomeContent(
+      rol: widget.rol,
+      onTabChange: _cambiarTab,
+      esPersonalTaller: esPersonalTaller,
+    ),
+    const VehiculosScreen(),
+    if (esPersonalTaller) const MantenimientosScreen(),
+  ];
 
   @override
   void initState() {
     super.initState();
-
-    _pantallas = [
-      HomeContent(rol: widget.rol, onTabChange: _cambiarTab),
-      const VehiculosScreen(),
-      const MantenimientosScreen(),
-    ];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -147,19 +155,21 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: _azulPrincipal,
         unselectedItemColor: Colors.grey,
         onTap: _cambiarTab,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
             label: 'Inicio',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.directions_car_rounded),
             label: 'Vehículos',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.build_rounded),
-            label: 'Mantenimiento',
-          ),
+          // Ocultamos el botón inferior si no es personal autorizado
+          if (esPersonalTaller)
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.build_rounded),
+              label: 'Mantenimiento',
+            ),
         ],
       ),
     );
@@ -209,15 +219,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       _cambiarTab(1);
                     },
                   ),
-                  _DrawerOption(
-                    icono: Icons.build_circle_outlined,
-                    titulo: 'Taller y mantenimiento',
-                    seleccionado: _currentIndex == 2,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _cambiarTab(2);
-                    },
-                  ),
+                  // Ocultamos la opción del menú si no es personal autorizado
+                  if (esPersonalTaller)
+                    _DrawerOption(
+                      icono: Icons.build_circle_outlined,
+                      titulo: 'Taller y mantenimiento',
+                      seleccionado: _currentIndex == 2,
+                      onTap: () {
+                        Navigator.pop(context);
+                        _cambiarTab(2);
+                      },
+                    ),
                   const Divider(),
                   ListTile(
                     leading: const Icon(
@@ -247,10 +259,16 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class HomeContent extends StatelessWidget {
-  const HomeContent({super.key, required this.onTabChange, required this.rol});
+  const HomeContent({
+    super.key,
+    required this.onTabChange,
+    required this.rol,
+    required this.esPersonalTaller, // Requiere el valor booleano
+  });
 
   final ValueChanged<int> onTabChange;
   final String rol;
+  final bool esPersonalTaller;
 
   @override
   Widget build(BuildContext context) {
@@ -317,51 +335,57 @@ class HomeContent extends StatelessWidget {
                               },
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: _DashboardCard(
-                              icono: Icons.build_rounded,
-                              titulo: 'Servicios',
-                              cantidad: provider.cantMantenimientos,
-                              color: Colors.orange,
-                              modoOscuro: modoOscuro,
-                              onTap: () {
-                                onTabChange(2);
-                              },
+                          // Bloqueo dinámico para ocultar servicios si es conductor
+                          if (esPersonalTaller) ...[
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _DashboardCard(
+                                icono: Icons.build_rounded,
+                                titulo: 'Servicios',
+                                cantidad: provider.cantMantenimientos,
+                                color: Colors.orange,
+                                modoOscuro: modoOscuro,
+                                onTap: () {
+                                  onTabChange(2);
+                                },
+                              ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _DashboardCard(
-                              icono: Icons.history_rounded,
-                              titulo: 'Historial',
-                              cantidad: provider.cantHistorial,
-                              color: Colors.green,
-                              modoOscuro: modoOscuro,
-                              onTap: () {
-                                onTabChange(2);
-                              },
+                      // Bloqueo dinámico para ocultar historial y pendientes
+                      if (esPersonalTaller) ...[
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _DashboardCard(
+                                icono: Icons.history_rounded,
+                                titulo: 'Historial',
+                                cantidad: provider.cantHistorial,
+                                color: Colors.green,
+                                modoOscuro: modoOscuro,
+                                onTap: () {
+                                  onTabChange(2);
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: _DashboardCard(
-                              icono: Icons.warning_amber_rounded,
-                              titulo: 'Pendientes',
-                              cantidad: provider.cantPendientes,
-                              color: Colors.redAccent,
-                              modoOscuro: modoOscuro,
-                              onTap: () {
-                                onTabChange(2);
-                              },
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: _DashboardCard(
+                                icono: Icons.warning_amber_rounded,
+                                titulo: 'Pendientes',
+                                cantidad: provider.cantPendientes,
+                                color: Colors.redAccent,
+                                modoOscuro: modoOscuro,
+                                onTap: () {
+                                  onTabChange(2);
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
