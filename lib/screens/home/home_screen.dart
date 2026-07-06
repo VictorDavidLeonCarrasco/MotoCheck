@@ -18,14 +18,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   static const Color _azulPrincipal = Color(0xFF1565C0);
+  static const Color _azulOscuro = Color(0xFF0D47A1);
   int _currentIndex = 0;
 
   // --- LÓGICA DE NIVELES DE USUARIO ---
-  // Determinamos si el usuario tiene permisos de Taller
   bool get esPersonalTaller =>
       widget.rol == 'Taller mecánico' || widget.rol == 'Administrador de flota';
 
-  // Construimos las pantallas dinámicamente. Si no es personal, solo carga 2.
   List<Widget> get _pantallas => [
     HomeContent(
       rol: widget.rol,
@@ -67,11 +66,11 @@ class _HomeScreenState extends State<HomeScreen> {
   String get _tituloActual {
     switch (_currentIndex) {
       case 1:
-        return 'Vehículos';
+        return 'Mis Vehículos';
       case 2:
-        return 'Mantenimiento';
+        return 'Centro de Mantenimiento';
       default:
-        return 'MotoCheck';
+        return 'Dashboard';
     }
   }
 
@@ -80,20 +79,36 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Cerrar sesión'),
-          content: const Text('¿Deseas cerrar tu sesión de MotoCheck?'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.logout_rounded, color: Colors.redAccent),
+              SizedBox(width: 10),
+              Text('Cerrar sesión'),
+            ],
+          ),
+          content: const Text(
+            '¿Estás seguro de que deseas salir de MotoCheck?',
+          ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
-              child: const Text('Cancelar'),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey),
+              ),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
-              child: const Text('Cerrar sesión'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Salir'),
             ),
           ],
         );
@@ -115,32 +130,49 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: _azulPrincipal,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [_azulPrincipal, _azulOscuro],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         foregroundColor: Colors.white,
         centerTitle: false,
         title: Row(
           children: [
-            Image.asset(
-              'lib/Assets/Motos.png',
-              width: 35,
-              height: 35,
-              fit: BoxFit.contain,
-              errorBuilder:
-                  (BuildContext context, Object error, StackTrace? stackTrace) {
-                    return const Icon(
-                      Icons.directions_car_filled_rounded,
-                      color: Colors.white,
-                    );
-                  },
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Image.asset(
+                'lib/Assets/Motos.png',
+                width: 28,
+                height: 28,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.directions_car_filled_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  );
+                },
+              ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 _tituloActual,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
@@ -149,110 +181,212 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       drawer: _buildDrawer(),
       body: IndexedStack(index: _currentIndex, children: _pantallas),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: _azulPrincipal,
-        unselectedItemColor: Colors.grey,
-        onTap: _cambiarTab,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_rounded),
-            label: 'Inicio',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car_rounded),
-            label: 'Vehículos',
-          ),
-          // Ocultamos el botón inferior si no es personal autorizado
-          if (esPersonalTaller)
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.build_rounded),
-              label: 'Mantenimiento',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
             ),
-        ],
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            backgroundColor: Theme.of(context).cardColor,
+            selectedItemColor: _azulPrincipal,
+            unselectedItemColor: Colors.grey.shade400,
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 12,
+            ),
+            onTap: _cambiarTab,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 5),
+                  child: Icon(Icons.dashboard_rounded, size: 26),
+                ),
+                activeIcon: Padding(
+                  padding: EdgeInsets.only(bottom: 5),
+                  child: Icon(Icons.dashboard_rounded, size: 28),
+                ),
+                label: 'Dashboard',
+              ),
+              const BottomNavigationBarItem(
+                icon: Padding(
+                  padding: EdgeInsets.only(bottom: 5),
+                  child: Icon(Icons.directions_car_rounded, size: 26),
+                ),
+                activeIcon: Padding(
+                  padding: EdgeInsets.only(bottom: 5),
+                  child: Icon(Icons.directions_car_rounded, size: 28),
+                ),
+                label: 'Vehículos',
+              ),
+              if (esPersonalTaller)
+                const BottomNavigationBarItem(
+                  icon: Padding(
+                    padding: EdgeInsets.only(bottom: 5),
+                    child: Icon(Icons.build_rounded, size: 26),
+                  ),
+                  activeIcon: Padding(
+                    padding: EdgeInsets.only(bottom: 5),
+                    child: Icon(Icons.build_rounded, size: 28),
+                  ),
+                  label: 'Taller',
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildDrawer() {
     return Drawer(
-      child: SafeArea(
-        child: Column(
-          children: [
-            UserAccountsDrawerHeader(
-              margin: EdgeInsets.zero,
-              decoration: const BoxDecoration(color: _azulPrincipal),
-              accountName: const Text(
-                'Usuario MotoCheck',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+      child: Column(
+        children: [
+          // Cabecera Premium
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(
+              top: 60,
+              bottom: 30,
+              left: 20,
+              right: 20,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_azulPrincipal, _azulOscuro],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              accountEmail: Text('Perfil activo: ${widget.rol}'),
-              currentAccountPicture: const CircleAvatar(
-                backgroundColor: Colors.white,
-                child: Icon(
-                  Icons.person_rounded,
-                  size: 40,
-                  color: _azulPrincipal,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: const CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: 45,
+                      color: _azulPrincipal,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                children: [
-                  _DrawerOption(
-                    icono: Icons.dashboard_rounded,
-                    titulo: 'Panel principal',
-                    seleccionado: _currentIndex == 0,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _cambiarTab(0);
-                    },
+                const SizedBox(height: 15),
+                const Text(
+                  'Usuario MotoCheck',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
                   ),
-                  _DrawerOption(
-                    icono: Icons.directions_car_rounded,
-                    titulo: 'Gestión de vehículos',
-                    seleccionado: _currentIndex == 1,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _cambiarTab(1);
-                    },
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
-                  // Ocultamos la opción del menú si no es personal autorizado
-                  if (esPersonalTaller)
-                    _DrawerOption(
-                      icono: Icons.build_circle_outlined,
-                      titulo: 'Taller y mantenimiento',
-                      seleccionado: _currentIndex == 2,
-                      onTap: () {
-                        Navigator.pop(context);
-                        _cambiarTab(2);
-                      },
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    widget.rol,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
                     ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.logout_rounded,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+              children: [
+                _DrawerOption(
+                  icono: Icons.dashboard_rounded,
+                  titulo: 'Panel principal',
+                  seleccionado: _currentIndex == 0,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _cambiarTab(0);
+                  },
+                ),
+                _DrawerOption(
+                  icono: Icons.directions_car_rounded,
+                  titulo: 'Gestión de vehículos',
+                  seleccionado: _currentIndex == 1,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _cambiarTab(1);
+                  },
+                ),
+                if (esPersonalTaller)
+                  _DrawerOption(
+                    icono: Icons.build_circle_outlined,
+                    titulo: 'Taller y mantenimiento',
+                    seleccionado: _currentIndex == 2,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _cambiarTab(2);
+                    },
+                  ),
+                const SizedBox(height: 20),
+                const Divider(indent: 20, endIndent: 20),
+                const SizedBox(height: 10),
+                ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.logout_rounded, color: Colors.red),
+                  ),
+                  title: const Text(
+                    'Cerrar sesión',
+                    style: TextStyle(
                       color: Colors.red,
+                      fontWeight: FontWeight.bold,
                     ),
-                    title: const Text(
-                      'Cerrar sesión',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _cerrarSesion();
-                    },
                   ),
-                ],
-              ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _cerrarSesion();
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -263,7 +397,7 @@ class HomeContent extends StatelessWidget {
     super.key,
     required this.onTabChange,
     required this.rol,
-    required this.esPersonalTaller, // Requiere el valor booleano
+    required this.esPersonalTaller,
   });
 
   final ValueChanged<int> onTabChange;
@@ -277,22 +411,41 @@ class HomeContent extends StatelessWidget {
     return Consumer<AppProvider>(
       builder: (BuildContext context, AppProvider provider, Widget? child) {
         return RefreshIndicator(
+          color: const Color(0xFF1565C0),
           onRefresh: provider.cargarContadores,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 25),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 25,
+                    vertical: 5,
+                  ),
+                  child: Text(
+                    "Resumen General",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: modoOscuro ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
                 CarouselSlider(
                   options: CarouselOptions(
-                    height: 160,
+                    height: 170,
                     autoPlay: true,
                     enlargeCenterPage: true,
-                    viewportFraction: 0.86,
+                    viewportFraction: 0.88,
                     enableInfiniteScroll: true,
-                    autoPlayCurve: Curves.fastOutSlowIn,
+                    autoPlayCurve: Curves.fastEaseInToSlowEaseOut,
                     autoPlayAnimationDuration: const Duration(
-                      milliseconds: 800,
+                      milliseconds: 1000,
                     ),
                   ),
                   items: [
@@ -316,71 +469,61 @@ class HomeContent extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: Column(
                     children: [
                       Row(
                         children: [
                           Expanded(
-                            child: _DashboardCard(
+                            child: _InteractiveDashboardCard(
                               icono: Icons.directions_car_rounded,
                               titulo: 'Vehículos',
                               cantidad: provider.cantVehiculos,
                               color: Colors.blue,
                               modoOscuro: modoOscuro,
-                              onTap: () {
-                                onTabChange(1);
-                              },
+                              onTap: () => onTabChange(1),
                             ),
                           ),
-                          // Bloqueo dinámico para ocultar servicios si es conductor
                           if (esPersonalTaller) ...[
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             Expanded(
-                              child: _DashboardCard(
+                              child: _InteractiveDashboardCard(
                                 icono: Icons.build_rounded,
                                 titulo: 'Servicios',
                                 cantidad: provider.cantMantenimientos,
                                 color: Colors.orange,
                                 modoOscuro: modoOscuro,
-                                onTap: () {
-                                  onTabChange(2);
-                                },
+                                onTap: () => onTabChange(2),
                               ),
                             ),
                           ],
                         ],
                       ),
-                      // Bloqueo dinámico para ocultar historial y pendientes
                       if (esPersonalTaller) ...[
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 18),
                         Row(
                           children: [
                             Expanded(
-                              child: _DashboardCard(
+                              child: _InteractiveDashboardCard(
                                 icono: Icons.history_rounded,
                                 titulo: 'Historial',
                                 cantidad: provider.cantHistorial,
                                 color: Colors.green,
                                 modoOscuro: modoOscuro,
-                                onTap: () {
-                                  onTabChange(2);
-                                },
+                                onTap: () => onTabChange(2),
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             Expanded(
-                              child: _DashboardCard(
+                              child: _InteractiveDashboardCard(
                                 icono: Icons.warning_amber_rounded,
                                 titulo: 'Pendientes',
                                 cantidad: provider.cantPendientes,
                                 color: Colors.redAccent,
                                 modoOscuro: modoOscuro,
-                                onTap: () {
-                                  onTabChange(2);
-                                },
+                                onTap: () => onTabChange(2),
                               ),
                             ),
                           ],
@@ -389,7 +532,7 @@ class HomeContent extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -406,35 +549,35 @@ class HomeContent extends StatelessWidget {
   }) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 5),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: colores,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: colores.first.withValues(alpha: 0.35),
-            blurRadius: 11,
-            offset: const Offset(0, 5),
+            color: colores.last.withValues(alpha: 0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 58,
-            height: 58,
+            width: 65,
+            height: 65,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(icono, color: Colors.white, size: 32),
+            child: Icon(icono, color: Colors.white, size: 35),
           ),
-          const SizedBox(width: 15),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -445,13 +588,18 @@ class HomeContent extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: 6),
                 Text(
                   subtitulo,
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -462,8 +610,9 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  const _DashboardCard({
+// --- NUEVA TARJETA INTERACTIVA CON ANIMACIÓN ---
+class _InteractiveDashboardCard extends StatefulWidget {
+  const _InteractiveDashboardCard({
     required this.icono,
     required this.titulo,
     required this.cantidad,
@@ -480,44 +629,72 @@ class _DashboardCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_InteractiveDashboardCard> createState() =>
+      _InteractiveDashboardCardState();
+}
+
+class _InteractiveDashboardCardState extends State<_InteractiveDashboardCard> {
+  bool _isPressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        height: 130,
-        decoration: BoxDecoration(
-          color: modoOscuro ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: modoOscuro ? 0.30 : 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(11),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedScale(
+        scale: _isPressed
+            ? 0.95
+            : 1.0, // Efecto resorte de compresión interactivo
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeInOut,
+        child: Container(
+          height: 140,
+          decoration: BoxDecoration(
+            color: widget.modoOscuro ? const Color(0xFF1E1E1E) : Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withValues(
+                  alpha: widget.modoOscuro ? 0.15 : 0.12,
+                ),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: Icon(icono, color: color, size: 32),
-            ),
-            const SizedBox(height: 9),
-            Text(
-              cantidad.toString(),
-              style: const TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              titulo,
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-          ],
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(widget.icono, color: widget.color, size: 34),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                widget.cantidad.toString(),
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                widget.titulo,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -541,18 +718,23 @@ class _DrawerOption extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color azul = Color(0xFF1565C0);
 
-    return ListTile(
-      selected: seleccionado,
-      selectedColor: azul,
-      selectedTileColor: azul.withValues(alpha: 0.09),
-      leading: Icon(icono),
-      title: Text(
-        titulo,
-        style: TextStyle(
-          fontWeight: seleccionado ? FontWeight.bold : FontWeight.normal,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 5),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        selected: seleccionado,
+        selectedColor: azul,
+        selectedTileColor: azul.withValues(alpha: 0.1),
+        leading: Icon(icono, size: 26),
+        title: Text(
+          titulo,
+          style: TextStyle(
+            fontWeight: seleccionado ? FontWeight.bold : FontWeight.w500,
+            fontSize: 15,
+          ),
         ),
+        onTap: onTap,
       ),
-      onTap: onTap,
     );
   }
 }

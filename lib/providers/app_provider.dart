@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../database/database_helper.dart';
 
 class AppProvider with ChangeNotifier {
-  final DatabaseHelper _databaseHelper = DatabaseHelper.instance;
-
   int cantVehiculos = 0;
   int cantMantenimientos = 0;
   int cantPendientes = 0;
@@ -14,10 +12,12 @@ class AppProvider with ChangeNotifier {
   }
 
   Future<void> cargarContadores() async {
-    cantVehiculos = await _databaseHelper.contarVehiculos();
-    cantMantenimientos = await _databaseHelper.contarMantenimientos();
-    cantPendientes = await _databaseHelper.contarPendientes();
-    cantHistorial = await _databaseHelper.contarAtendidos();
+    // Ahora llamamos directamente a la clase DatabaseHelper (métodos estáticos)
+    cantVehiculos = await DatabaseHelper.contarVehiculos();
+    cantMantenimientos = await DatabaseHelper.contarMantenimientos();
+    cantPendientes = await DatabaseHelper.contarPendientes();
+    cantHistorial = await DatabaseHelper.contarAtendidos();
+
     notifyListeners();
   }
 

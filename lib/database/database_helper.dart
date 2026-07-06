@@ -1,108 +1,142 @@
-import 'dart:async';
-import 'package:control_de_mototaxis_o_taxis/models/mantenimiento.dart';
-import 'package:control_de_mototaxis_o_taxis/models/vehiculo.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import "package:sqflite/sqflite.dart";
+import '../models/vehiculo.dart';
+import '../models/mantenimiento.dart';
 
 class DatabaseHelper {
-  DatabaseHelper._privateConstructor();
-
-  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
-
+  // --- PATRÓN SINGLETON ---
   static Database? _database;
 
-  Future<Database> get database async {
-    _database ??= await _initDatabase();
+  static Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDB();
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    final databasePath = await getDatabasesPath();
-    final path = join(databasePath, 'moto_check.db');
+  static Future<Database> _initDB() async {
+    String path = join(await getDatabasesPath(), 'motocheck.db');
 
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+    return await openDatabase(
+      path,
+      version: 3, // <-- SUBIMOS LA VERSIÓN A 3
+      onCreate: (db, version) async {
+        await db.execute(
+          'CREATE TABLE vehiculos(id INTEGER PRIMARY KEY AUTOINCREMENT, placa TEXT, marca TEXT, modelo TEXT, anio INTEGER, color TEXT)',
+        );
+        await db.execute(
+          'CREATE TABLE mantenimientos(id INTEGER PRIMARY KEY AUTOINCREMENT, vehiculoPlaca TEXT, falla TEXT, fecha TEXT, estado TEXT)',
+        );
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'CREATE TABLE mantenimientos(id INTEGER PRIMARY KEY AUTOINCREMENT, vehiculoPlaca TEXT, falla TEXT, fecha TEXT, estado TEXT)',
+          );
+        }
+        if (oldVersion < 3) {
+          // --- MIGRACIÓN MÁGICA ---
+          // Si detecta que tu BD es antigua, le inyecta la columna "color" automáticamente
+          try {
+            await db.execute('ALTER TABLE vehiculos ADD COLUMN color TEXT');
+          } catch (e) {
+            // Si la columna ya existe por alguna razón, ignora el error y continúa
+            assert(true, "Columna ya existente: $e");
+          }
+        }
+      },
+    );
   }
 
-  Future<void> _onCreate(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE items(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        value TEXT
-      )
-    ''');
-  }
+  // ==========================================
+  // --- MÓDULO VEHÍCULOS ---
+  // ==========================================
 
-  Future<int> insert(String table, Map<String, dynamic> values) async {
+  static Future<int> insertVehiculo(Vehiculo vehiculo) async {
     final db = await database;
     return await db.insert(
-      table,
-      values,
+      'vehiculos',
+      vehiculo.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<List<Map<String, dynamic>>> queryAllRows(String table) async {
+  static Future<List<Vehiculo>> obtenerVehiculos() async {
     final db = await database;
-    return await db.query(table);
+    final List<Map<String, dynamic>> maps = await db.query('vehiculos');
+    return List.generate(maps.length, (i) => Vehiculo.fromMap(maps[i]));
   }
 
-  Future<int> queryRowCount(String table) async {
+  static Future<int> updateVehiculo(Vehiculo vehiculo) async {
     final db = await database;
-    final result = Sqflite.firstIntValue(
-      await db.rawQuery('SELECT COUNT(*) FROM $table'),
+    return await db.update(
+      'vehiculos',
+      vehiculo.toMap(),
+      where: 'id = ?',
+      whereArgs: [vehiculo.id],
     );
-    return result ?? 0;
   }
 
-  Future<int> update(
-    String table,
-    Map<String, dynamic> values,
-    String where,
-    List<Object?> whereArgs,
-  ) async {
+  static Future<int> deleteVehiculo(int id) async {
     final db = await database;
-    return await db.update(table, values, where: where, whereArgs: whereArgs);
+    return await db.delete('vehiculos', where: 'id = ?', whereArgs: [id]);
   }
 
-  Future<int> delete(
-    String table,
-    String where,
-    List<Object?> whereArgs,
-  ) async {
+  // ==========================================
+  // --- MÓDULO MANTENIMIENTOS ---
+  // ==========================================
+
+  static Future<int> insertMantenimiento(Mantenimiento mant) async {
     final db = await database;
-    return await db.delete(table, where: where, whereArgs: whereArgs);
+    return await db.insert(
+      'mantenimientos',
+      mant.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
-
-  Future<void> close() async {
-    final db = await database;
-    await db.close();
-    _database = null;
-  }
-
-  Future<int> contarVehiculos() async {
-    return await queryRowCount('items');
-  }
-
-  static Future<void> insertMantenimiento(Mantenimiento mant) async {}
-
-  static Future<void> insertVehiculo(Vehiculo v) async {}
-
-  static Future<void> updateVehiculo(Vehiculo v) async {}
 
   static Future<List<Mantenimiento>> obtenerMantenimientos() async {
-    return [];
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('mantenimientos');
+    return List.generate(maps.length, (i) => Mantenimiento.fromMap(maps[i]));
   }
 
-  Future<int> contarMantenimientos() async {
-    return 0;
+  // ==========================================
+  // --- CONTADORES PARA EL DASHBOARD ---
+  // ==========================================
+
+  static Future<int> contarVehiculos() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM vehiculos'),
+        ) ??
+        0;
   }
 
-  Future<int> contarPendientes() async {
-    return 0;
+  static Future<int> contarMantenimientos() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(*) FROM mantenimientos'),
+        ) ??
+        0;
   }
 
-  Future<int> contarAtendidos() async {
-    return 0;
+  static Future<int> contarPendientes() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+          await db.rawQuery(
+            "SELECT COUNT(*) FROM mantenimientos WHERE estado = 'Pendiente'",
+          ),
+        ) ??
+        0;
+  }
+
+  static Future<int> contarAtendidos() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+          await db.rawQuery(
+            "SELECT COUNT(*) FROM mantenimientos WHERE estado = 'Atendido'",
+          ),
+        ) ??
+        0;
   }
 }
