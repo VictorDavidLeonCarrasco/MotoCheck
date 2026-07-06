@@ -21,10 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Color _azulOscuro = Color(0xFF0D47A1);
   int _currentIndex = 0;
 
-  // --- LÓGICA DE NIVELES DE USUARIO ---
   bool get esPersonalTaller =>
       widget.rol == 'Taller mecánico' || widget.rol == 'Administrador de flota';
 
+  // --- AHORA TODOS VEN LAS 3 PANTALLAS ---
   List<Widget> get _pantallas => [
     HomeContent(
       rol: widget.rol,
@@ -32,13 +32,13 @@ class _HomeScreenState extends State<HomeScreen> {
       esPersonalTaller: esPersonalTaller,
     ),
     const VehiculosScreen(),
-    if (esPersonalTaller) const MantenimientosScreen(),
+    // Pasamos el rol a la pantalla de mantenimientos para bloquear la edición
+    MantenimientosScreen(esPersonalTaller: esPersonalTaller),
   ];
 
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _actualizarContadores();
@@ -54,13 +54,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _cambiarTab(int index) {
-    if (index < 0 || index >= _pantallas.length) {
-      return;
-    }
-
-    setState(() {
-      _currentIndex = index;
-    });
+    if (index < 0 || index >= _pantallas.length) return;
+    setState(() => _currentIndex = index);
   }
 
   String get _tituloActual {
@@ -68,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         return 'Mis Vehículos';
       case 2:
-        return 'Centro de Mantenimiento';
+        return esPersonalTaller ? 'Centro de Mantenimiento' : 'Mis Servicios';
       default:
         return 'Dashboard';
     }
@@ -115,9 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    if (confirmar != true || !mounted) {
-      return;
-    }
+    if (confirmar != true || !mounted) return;
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
@@ -155,13 +148,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 28,
                 height: 28,
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.directions_car_filled_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  );
-                },
+                errorBuilder: (context, error, stackTrace) => const Icon(
+                  Icons.directions_car_filled_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -232,18 +223,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 label: 'Vehículos',
               ),
-              if (esPersonalTaller)
-                const BottomNavigationBarItem(
-                  icon: Padding(
-                    padding: EdgeInsets.only(bottom: 5),
-                    child: Icon(Icons.build_rounded, size: 26),
-                  ),
-                  activeIcon: Padding(
-                    padding: EdgeInsets.only(bottom: 5),
-                    child: Icon(Icons.build_rounded, size: 28),
-                  ),
-                  label: 'Taller',
+              BottomNavigationBarItem(
+                icon: const Padding(
+                  padding: EdgeInsets.only(bottom: 5),
+                  child: Icon(Icons.build_rounded, size: 26),
                 ),
+                activeIcon: const Padding(
+                  padding: EdgeInsets.only(bottom: 5),
+                  child: Icon(Icons.build_rounded, size: 28),
+                ),
+                label: esPersonalTaller ? 'Taller' : 'Servicios',
+              ),
             ],
           ),
         ),
@@ -255,7 +245,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return Drawer(
       child: Column(
         children: [
-          // Cabecera Premium
           Container(
             width: double.infinity,
             padding: const EdgeInsets.only(
@@ -346,16 +335,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     _cambiarTab(1);
                   },
                 ),
-                if (esPersonalTaller)
-                  _DrawerOption(
-                    icono: Icons.build_circle_outlined,
-                    titulo: 'Taller y mantenimiento',
-                    seleccionado: _currentIndex == 2,
-                    onTap: () {
-                      Navigator.pop(context);
-                      _cambiarTab(2);
-                    },
-                  ),
+                _DrawerOption(
+                  icono: Icons.build_circle_outlined,
+                  titulo: esPersonalTaller
+                      ? 'Taller y mantenimiento'
+                      : 'Mis Servicios',
+                  seleccionado: _currentIndex == 2,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _cambiarTab(2);
+                  },
+                ),
                 const SizedBox(height: 20),
                 const Divider(indent: 20, endIndent: 20),
                 const SizedBox(height: 10),
@@ -409,7 +399,7 @@ class HomeContent extends StatelessWidget {
     final bool modoOscuro = Theme.of(context).brightness == Brightness.dark;
 
     return Consumer<AppProvider>(
-      builder: (BuildContext context, AppProvider provider, Widget? child) {
+      builder: (context, provider, child) {
         return RefreshIndicator(
           color: const Color(0xFF1565C0),
           onRefresh: provider.cargarContadores,
@@ -443,7 +433,6 @@ class HomeContent extends StatelessWidget {
                     enlargeCenterPage: true,
                     viewportFraction: 0.88,
                     enableInfiniteScroll: true,
-                    autoPlayCurve: Curves.fastEaseInToSlowEaseOut,
                     autoPlayAnimationDuration: const Duration(
                       milliseconds: 1000,
                     ),
@@ -457,12 +446,12 @@ class HomeContent extends StatelessWidget {
                     ),
                     _buildBanner(
                       titulo: 'Mantenimiento preventivo',
-                      subtitulo: 'Revisa los servicios pendientes.',
+                      subtitulo: 'Revisa los servicios.',
                       icono: Icons.build_circle_rounded,
                       colores: const [Color(0xFFE65100), Color(0xFFFF9800)],
                     ),
                     _buildBanner(
-                      titulo: 'Historial del taller',
+                      titulo: 'Historial activo',
                       subtitulo: 'Mantén tus registros al día.',
                       icono: Icons.history_rounded,
                       colores: const [Color(0xFF2E7D32), Color(0xFF66BB6A)],
@@ -486,49 +475,45 @@ class HomeContent extends StatelessWidget {
                               onTap: () => onTabChange(1),
                             ),
                           ),
-                          if (esPersonalTaller) ...[
-                            const SizedBox(width: 18),
-                            Expanded(
-                              child: _InteractiveDashboardCard(
-                                icono: Icons.build_rounded,
-                                titulo: 'Servicios',
-                                cantidad: provider.cantMantenimientos,
-                                color: Colors.orange,
-                                modoOscuro: modoOscuro,
-                                onTap: () => onTabChange(2),
-                              ),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: _InteractiveDashboardCard(
+                              icono: Icons.build_rounded,
+                              titulo: 'Servicios',
+                              cantidad: provider.cantMantenimientos,
+                              color: Colors.orange,
+                              modoOscuro: modoOscuro,
+                              onTap: () => onTabChange(2),
                             ),
-                          ],
+                          ),
                         ],
                       ),
-                      if (esPersonalTaller) ...[
-                        const SizedBox(height: 18),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _InteractiveDashboardCard(
-                                icono: Icons.history_rounded,
-                                titulo: 'Historial',
-                                cantidad: provider.cantHistorial,
-                                color: Colors.green,
-                                modoOscuro: modoOscuro,
-                                onTap: () => onTabChange(2),
-                              ),
+                      const SizedBox(height: 18),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _InteractiveDashboardCard(
+                              icono: Icons.history_rounded,
+                              titulo: 'Historial',
+                              cantidad: provider.cantHistorial,
+                              color: Colors.green,
+                              modoOscuro: modoOscuro,
+                              onTap: () => onTabChange(2),
                             ),
-                            const SizedBox(width: 18),
-                            Expanded(
-                              child: _InteractiveDashboardCard(
-                                icono: Icons.warning_amber_rounded,
-                                titulo: 'Pendientes',
-                                cantidad: provider.cantPendientes,
-                                color: Colors.redAccent,
-                                modoOscuro: modoOscuro,
-                                onTap: () => onTabChange(2),
-                              ),
+                          ),
+                          const SizedBox(width: 18),
+                          Expanded(
+                            child: _InteractiveDashboardCard(
+                              icono: Icons.warning_amber_rounded,
+                              titulo: 'Pendientes',
+                              cantidad: provider.cantPendientes,
+                              color: Colors.redAccent,
+                              modoOscuro: modoOscuro,
+                              onTap: () => onTabChange(2),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -610,7 +595,6 @@ class HomeContent extends StatelessWidget {
   }
 }
 
-// --- NUEVA TARJETA INTERACTIVA CON ANIMACIÓN ---
 class _InteractiveDashboardCard extends StatefulWidget {
   const _InteractiveDashboardCard({
     required this.icono,
@@ -620,7 +604,6 @@ class _InteractiveDashboardCard extends StatefulWidget {
     required this.modoOscuro,
     required this.onTap,
   });
-
   final IconData icono;
   final String titulo;
   final int cantidad;
@@ -635,7 +618,6 @@ class _InteractiveDashboardCard extends StatefulWidget {
 
 class _InteractiveDashboardCardState extends State<_InteractiveDashboardCard> {
   bool _isPressed = false;
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -646,9 +628,7 @@ class _InteractiveDashboardCardState extends State<_InteractiveDashboardCard> {
       },
       onTapCancel: () => setState(() => _isPressed = false),
       child: AnimatedScale(
-        scale: _isPressed
-            ? 0.95
-            : 1.0, // Efecto resorte de compresión interactivo
+        scale: _isPressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeInOut,
         child: Container(
@@ -708,7 +688,6 @@ class _DrawerOption extends StatelessWidget {
     required this.seleccionado,
     required this.onTap,
   });
-
   final IconData icono;
   final String titulo;
   final bool seleccionado;
@@ -717,7 +696,6 @@ class _DrawerOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const Color azul = Color(0xFF1565C0);
-
     return Container(
       margin: const EdgeInsets.only(bottom: 5),
       child: ListTile(

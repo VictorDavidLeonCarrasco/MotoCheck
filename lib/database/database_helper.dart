@@ -4,7 +4,6 @@ import '../models/vehiculo.dart';
 import '../models/mantenimiento.dart';
 
 class DatabaseHelper {
-  // --- PATRÓN SINGLETON ---
   static Database? _database;
 
   static Future<Database> get database async {
@@ -18,7 +17,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3, // <-- SUBIMOS LA VERSIÓN A 3
+      version: 3,
       onCreate: (db, version) async {
         await db.execute(
           'CREATE TABLE vehiculos(id INTEGER PRIMARY KEY AUTOINCREMENT, placa TEXT, marca TEXT, modelo TEXT, anio INTEGER, color TEXT)',
@@ -34,12 +33,9 @@ class DatabaseHelper {
           );
         }
         if (oldVersion < 3) {
-          // --- MIGRACIÓN MÁGICA ---
-          // Si detecta que tu BD es antigua, le inyecta la columna "color" automáticamente
           try {
             await db.execute('ALTER TABLE vehiculos ADD COLUMN color TEXT');
           } catch (e) {
-            // Si la columna ya existe por alguna razón, ignora el error y continúa
             assert(true, "Columna ya existente: $e");
           }
         }
@@ -98,6 +94,12 @@ class DatabaseHelper {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('mantenimientos');
     return List.generate(maps.length, (i) => Mantenimiento.fromMap(maps[i]));
+  }
+
+  // --- NUEVA FUNCIÓN PARA ELIMINAR AUTOMÁTICAMENTE ---
+  static Future<int> deleteMantenimiento(int id) async {
+    final db = await database;
+    return await db.delete('mantenimientos', where: 'id = ?', whereArgs: [id]);
   }
 
   // ==========================================
