@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../database/database_helper.dart';
 import '../../models/mantenimiento.dart';
@@ -19,11 +23,13 @@ class _AgregarMantenimientoScreenState
   final _formKey = GlobalKey<FormState>();
   final _fallaController = TextEditingController();
 
-  String _estadoSeleccionado = 'Pendiente';
+  List<Vehiculo> _vehiculos = [];
   String? _placaSeleccionada;
-  List<Vehiculo> _vehiculosDisponibles = [];
-  bool _cargandoVehiculos = true;
+  bool _isLoading = true;
   bool _isSaving = false;
+
+  XFile? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -35,92 +41,123 @@ class _AgregarMantenimientoScreenState
     final vehiculos = await DatabaseHelper.obtenerVehiculos();
     if (mounted) {
       setState(() {
-        _vehiculosDisponibles = vehiculos;
-        _cargandoVehiculos = false;
+        _vehiculos = vehiculos;
+        if (_vehiculos.isNotEmpty) {
+          _placaSeleccionada = _vehiculos.first.placa;
+        }
+        _isLoading = false;
       });
     }
   }
 
-  Future<void> _guardar() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isSaving = true);
+  Future<void> _seleccionarImagen(ImageSource source) async {
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+        maxWidth: 1024,
+      );
+      if (pickedFile != null) {
+        setState(() => _imageFile = pickedFile);
+      }
+    } catch (e) {
+      debugPrint("Error al seleccionar imagen: $e");
+    }
+  }
 
-      try {
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        final mant = Mantenimiento(
-          vehiculoPlaca: _placaSeleccionada!,
-          falla: _fallaController.text,
-          fecha: DateTime.now().toString().substring(0, 10),
-          estado: _estadoSeleccionado,
-        );
-
-        await DatabaseHelper.insertMantenimiento(mant);
-
-        if (!mounted) {
-          return;
-        }
-        Provider.of<AppProvider>(context, listen: false).actualizarDatos();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 10),
-                Text(
-                  'Servicio registrado exitosamente',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+  void _mostrarOpcionesImagen() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.camera_alt_rounded,
+                color: Color(0xFF1565C0),
+              ),
+              title: const Text('Tomar Foto'),
+              onTap: () {
+                Navigator.pop(context);
+                _seleccionarImagen(ImageSource.camera);
+              },
             ),
-            backgroundColor: Colors.green.shade600,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library_rounded,
+                color: Color(0xFF1565C0),
+              ),
+              title: const Text('Subir desde Galería'),
+              onTap: () {
+                Navigator.pop(context);
+                _seleccionarImagen(ImageSource.gallery);
+              },
             ),
-          ),
-        );
-        Navigator.pop(context, true);
-      } catch (e) {
-        if (!mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      } finally {
-        if (mounted) {
-          setState(() => _isSaving = false);
-        }
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _guardarMantenimiento() async {
+    // Solucionado: Uso de llaves { } en el if
+    if (!_formKey.currentState!.validate() || _placaSeleccionada == null) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      // Como no usamos Storage, guardamos la ruta local directamente
+      String? imageUrl = _imageFile?.path;
+
+      final mant = Mantenimiento(
+        vehiculoPlaca: _placaSeleccionada!,
+        falla: _fallaController.text.trim(),
+        fecha: DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()),
+        estado: 'Pendiente',
+        fotoUrl: imageUrl,
+      );
+
+      await DatabaseHelper.insertMantenimiento(mant);
+
+      // Solucionado: Uso de llaves { } en el if
+      if (!mounted) {
+        return;
+      }
+
+      Provider.of<AppProvider>(context, listen: false).actualizarDatos();
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+      );
+    } finally {
+      // Solucionado: Uso de llaves { } en el if
+      if (mounted) {
+        setState(() => _isSaving = false);
       }
     }
   }
 
   @override
-  void dispose() {
-    _fallaController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
-        elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+              colors: [Color(0xFFFFA726), Color(0xFFEF6C00)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
         ),
         title: const Text(
-          'Registrar Falla',
+          'Registrar Mantenimiento',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
@@ -131,193 +168,218 @@ class _AgregarMantenimientoScreenState
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Container(
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF121212), const Color(0xFF1A1A1A)]
-                : [const Color(0xFFF5F7FA), const Color(0xFFE3E9F0)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 30.0),
-          child: Container(
-            padding: const EdgeInsets.all(25.0),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                  blurRadius: 25,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.build_circle_rounded,
-                        size: 60,
-                        color: Colors.orange,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.orange))
+          : _vehiculos.isEmpty
+          ? _buildEmptyState()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(25.0),
+              physics: const BouncingScrollPhysics(),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Selecciona el Vehículo',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  _cargandoVehiculos
-                      ? const Center(child: CircularProgressIndicator())
-                      : DropdownButtonFormField<String>(
-                          initialValue: _placaSeleccionada,
-                          dropdownColor: isDark
-                              ? const Color(0xFF2C2C2C)
-                              : Colors.white,
-                          decoration: _inputStyle(
-                            'Seleccionar Vehículo',
-                            Icons.directions_car_rounded,
-                            isDark,
-                          ),
-                          items: _vehiculosDisponibles.map((Vehiculo v) {
-                            return DropdownMenuItem<String>(
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      // Solucionado: Se reemplazó 'value' por 'initialValue'
+                      initialValue: _placaSeleccionada,
+                      decoration: _inputStyle(
+                        'Vehículo',
+                        Icons.directions_car_rounded,
+                      ),
+                      items: _vehiculos
+                          .map(
+                            (v) => DropdownMenuItem(
                               value: v.placa,
                               child: Text(
-                                '${v.placa} - ${v.marca} ${v.modelo}',
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black87,
+                                '${v.placa} - ${v.marca}',
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (String? newValue) =>
-                              setState(() => _placaSeleccionada = newValue),
-                          validator: (value) => value == null
-                              ? 'Por favor seleccione un vehículo'
-                              : null,
-                        ),
-                  const SizedBox(height: 20),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _placaSeleccionada = v),
+                    ),
+                    const SizedBox(height: 25),
 
-                  TextFormField(
-                    controller: _fallaController,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: _inputStyle(
+                    const Text(
+                      'Evidencia Fotográfica',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _buildImageSelector(),
+                    const SizedBox(height: 25),
+
+                    const Text(
                       'Descripción de la falla',
-                      Icons.plumbing_rounded,
-                      isDark,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
-                    maxLines: 3,
-                    validator: (v) => v!.trim().isEmpty
-                        ? 'La descripción es obligatoria'
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _fallaController,
+                      maxLines: 4,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: _inputStyle(
+                        'Detalles del problema',
+                        Icons.build_circle_rounded,
+                      ),
+                      validator: (v) =>
+                          v!.trim().isEmpty ? 'Ingrese la descripción' : null,
+                    ),
+                    const SizedBox(height: 40),
 
-                  DropdownButtonFormField<String>(
-                    initialValue: _estadoSeleccionado,
-                    dropdownColor: isDark
-                        ? const Color(0xFF2C2C2C)
-                        : Colors.white,
-                    decoration: _inputStyle(
-                      'Estado inicial',
-                      Icons.info_outline_rounded,
-                      isDark,
-                    ),
-                    items: ['Pendiente', 'En proceso', 'Atendido'].map((
-                      String estado,
-                    ) {
-                      return DropdownMenuItem<String>(
-                        value: estado,
-                        child: Text(
-                          estado,
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.bold,
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: _isSaving ? null : _guardarMantenimiento,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEF6C00),
+                          foregroundColor: Colors.white,
+                          elevation: _isSaving ? 0 : 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (String? newValue) =>
-                        setState(() => _estadoSeleccionado = newValue!),
-                  ),
-                  const SizedBox(height: 40),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: _isSaving ? null : _guardar,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        elevation: _isSaving ? 0 : 5,
-                        shadowColor: Colors.orange.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 25,
+                                height: 25,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                            : const Text(
+                                'GUARDAR REGISTRO',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
                       ),
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 25,
-                              height: 25,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 3,
-                              ),
-                            )
-                          : const Text(
-                              'REGISTRAR MANTENIMIENTO',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.0,
-                              ),
-                            ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildImageSelector() {
+    return GestureDetector(
+      onTap: _mostrarOpcionesImagen,
+      child: Container(
+        height: 180,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.orange.withValues(alpha: 0.5),
+            width: 2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: _imageFile == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add_a_photo_rounded,
+                    size: 50,
+                    color: Colors.orange.shade300,
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Toca para subir una foto',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
+              )
+            : ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: kIsWeb
+                    ? Image.network(
+                        _imageFile!.path,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      )
+                    : Image.file(
+                        File(_imageFile!.path),
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.directions_car_rounded,
+              size: 80,
+              color: Colors.grey.shade400,
             ),
-          ),
+            const SizedBox(height: 20),
+            const Text(
+              'No hay vehículos',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Primero debes registrar un vehículo para poder asignarle un mantenimiento.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  InputDecoration _inputStyle(String label, IconData icon, bool isDark) {
+  InputDecoration _inputStyle(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(
-        color: isDark ? Colors.white70 : Colors.black54,
-        fontWeight: FontWeight.w500,
-      ),
-      prefixIcon: Icon(icon, color: Colors.orange),
+      prefixIcon: Icon(icon, color: const Color(0xFFEF6C00)),
       filled: true,
-      fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade100,
+      fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.orange, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFFEF6C00), width: 2),
       ),
     );
   }

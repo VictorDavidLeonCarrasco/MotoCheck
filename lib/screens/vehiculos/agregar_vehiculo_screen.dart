@@ -37,7 +37,9 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
 
   void _actualizarFormatoPlaca() {
     String rawText = _placaController.text.replaceAll('-', '');
-    if (rawText.isEmpty) return;
+    if (rawText.isEmpty) {
+      return;
+    }
 
     String formatted = _aplicarMascaraPlaca(rawText, _tipoSeleccionado);
 
@@ -49,7 +51,9 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
 
   String _aplicarMascaraPlaca(String text, String tipo) {
     String cleanText = text.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-    if (cleanText.length > 6) cleanText = cleanText.substring(0, 6);
+    if (cleanText.length > 6) {
+      cleanText = cleanText.substring(0, 6);
+    }
 
     if (tipo == 'Auto') {
       if (cleanText.length > 3) {
@@ -72,7 +76,9 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
   }
 
   Future<void> _guardarVehiculo() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() => _isSaving = true);
 
@@ -93,7 +99,9 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
         await DatabaseHelper.updateVehiculo(v);
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       Provider.of<AppProvider>(context, listen: false).actualizarDatos();
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,7 +112,7 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
               const SizedBox(width: 10),
               Text(
                 widget.vehiculo == null
-                    ? 'Vehículo registrado exitosamente'
+                    ? 'Vehículo registrado'
                     : 'Vehículo actualizado',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -120,7 +128,9 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
 
       Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
@@ -235,7 +245,6 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
                   TextFormField(
                     controller: _placaController,
                     textCapitalization: TextCapitalization.characters,
@@ -263,13 +272,16 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
                       }),
                     ],
                     validator: (v) {
-                      if (v!.isEmpty) return 'Ingrese la placa';
-                      if (v.length < 7) return 'Placa incompleta';
+                      if (v!.isEmpty) {
+                        return 'Ingrese la placa';
+                      }
+                      if (v.length < 7) {
+                        return 'Placa incompleta';
+                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 20),
-
                   TextFormField(
                     controller: _marcaController,
                     textCapitalization: TextCapitalization.words,
@@ -283,11 +295,14 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
                         RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'),
                       ),
                     ],
-                    validator: (v) =>
-                        v!.trim().isEmpty ? 'Ingrese la marca' : null,
+                    validator: (v) {
+                      if (v!.trim().isEmpty) {
+                        return 'Ingrese la marca';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 20),
-
                   TextFormField(
                     controller: _modeloController,
                     textCapitalization: TextCapitalization.words,
@@ -301,11 +316,14 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
                         RegExp(r'[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-]'),
                       ),
                     ],
-                    validator: (v) =>
-                        v!.trim().isEmpty ? 'Ingrese el modelo' : null,
+                    validator: (v) {
+                      if (v!.trim().isEmpty) {
+                        return 'Ingrese el modelo';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 20),
-
                   TextFormField(
                     controller: _anioController,
                     keyboardType: TextInputType.number,
@@ -319,17 +337,21 @@ class _AgregarVehiculoScreenState extends State<AgregarVehiculoScreen> {
                       LengthLimitingTextInputFormatter(4),
                     ],
                     validator: (v) {
-                      if (v!.isEmpty) return 'Ingrese el año';
-                      if (v.length != 4) return 'El año debe tener 4 dígitos';
+                      if (v!.isEmpty) {
+                        return 'Ingrese el año';
+                      }
+                      if (v.length != 4) {
+                        return 'El año debe tener 4 dígitos';
+                      }
                       int anio = int.parse(v);
                       int anioActual = DateTime.now().year;
-                      if (anio < 1950 || anio > anioActual + 1)
+                      if (anio < 1950 || anio > anioActual + 1) {
                         return 'Año inválido';
+                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 40),
-
                   SizedBox(
                     width: double.infinity,
                     height: 55,

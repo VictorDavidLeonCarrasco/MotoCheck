@@ -14,10 +14,8 @@ class VehiculosScreen extends StatefulWidget {
 }
 
 class _VehiculosScreenState extends State<VehiculosScreen> {
-  List<Vehiculo> _todosLosVehiculos = [];
-  List<Vehiculo> _vehiculosFiltrados = [];
+  List<Vehiculo> _vehiculos = [];
   bool _cargando = true;
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -25,58 +23,49 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
     _cargarVehiculos();
   }
 
-  // --- FUNCIÓN QUE CARGA Y ACTUALIZA LA LISTA ---
+  // --- FUNCIÓN MEJORADA CON MANEJO DE ERRORES ---
   Future<void> _cargarVehiculos() async {
-    final vehiculos = await DatabaseHelper.obtenerVehiculos();
-    if (!mounted) return;
-
-    setState(() {
-      _todosLosVehiculos = vehiculos;
-      // Mantenemos el filtro actual si el usuario estaba buscando algo
-      if (_searchController.text.isEmpty) {
-        _vehiculosFiltrados = vehiculos;
-      } else {
-        _filtrarBusqueda(_searchController.text);
-      }
-      _cargando = false;
-    });
-  }
-
-  // --- LA CLAVE PARA ACTUALIZAR EL DASHBOARD Y LA LISTA ---
-  Future<void> _navegarAgregarEditar([Vehiculo? vehiculo]) async {
-    // 1. Esperamos a que la pantalla de registro se cierre
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AgregarVehiculoScreen(vehiculo: vehiculo),
-      ),
-    );
-
-    // 2. Si devolvió 'true' (significa que guardó algo), actualizamos todo
-    if (result == true) {
-      // Actualizamos la lista de esta pantalla
-      await _cargarVehiculos();
-
-      // Actualizamos los íconos numéricos del Dashboard (AppProvider)
+    try {
+      final vehiculos = await DatabaseHelper.obtenerVehiculos();
       if (mounted) {
-        context.read<AppProvider>().cargarContadores();
+        setState(() {
+          _vehiculos = vehiculos;
+          _cargando = false; // Apagamos el spinner con éxito
+        });
+      }
+    } catch (e) {
+      debugPrint('Error al cargar vehículos: $e');
+      if (mounted) {
+        setState(
+          () => _cargando = false,
+        ); // Apagamos el spinner incluso si falla
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de conexión a la nube: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
 
-  Future<void> _eliminarVehiculo(int id) async {
+  Future<void> _eliminarVehiculo(String id) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Eliminar Vehículo'),
+        title: const Text(
+          'Eliminar Vehículo',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text(
-          '¿Estás seguro de eliminar este vehículo de tu flota?',
+          '¿Estás seguro de que deseas eliminar este vehículo de la flota?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -88,43 +77,33 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
     );
 
     if (confirmar == true) {
-      await DatabaseHelper.deleteVehiculo(id);
-      await _cargarVehiculos();
-      if (mounted) {
-        context.read<AppProvider>().cargarContadores();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Vehículo eliminado'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
+      try {
+        await DatabaseHelper.deleteVehiculo(id);
+        await _cargarVehiculos();
+        if (mounted) {
+          context.read<AppProvider>().cargarContadores();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Vehículo eliminado correctamente'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
             ),
-          ),
-        );
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar: $e'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
       }
     }
-  }
-
-  void _filtrarBusqueda(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _vehiculosFiltrados = _todosLosVehiculos;
-      } else {
-        _vehiculosFiltrados = _todosLosVehiculos.where((v) {
-          final textoBusqueda = query.toLowerCase();
-          return v.placa.toLowerCase().contains(textoBusqueda) ||
-              v.marca.toLowerCase().contains(textoBusqueda) ||
-              v.modelo.toLowerCase().contains(textoBusqueda);
-        }).toList();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   @override
@@ -133,156 +112,31 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Column(
-        children: [
-          // 1. HEADER AZUL PREMIUM
-          _buildHeaderCard(),
-
-          // 2. BUSCADOR
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20.0,
-              vertical: 10.0,
-            ),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filtrarBusqueda,
-              decoration: InputDecoration(
-                hintText: 'Buscar por placa, marca o modelo',
-                hintStyle: TextStyle(
-                  color: isDark ? Colors.white54 : Colors.grey.shade500,
-                ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: isDark ? Colors.white70 : Colors.blue.shade700,
-                ),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(
-                    color: isDark ? Colors.transparent : Colors.grey.shade200,
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF1565C0),
-                    width: 2,
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // 3. CONTENIDO (LISTA O ESTADO VACÍO)
-          Expanded(
-            child: _cargando
-                ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF1565C0)),
-                  )
-                : _todosLosVehiculos.isEmpty
-                ? _buildEmptyState(isDark)
-                : _vehiculosFiltrados.isEmpty
-                ? Center(
-                    child: Text(
-                      'No hay resultados para la búsqueda',
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : Colors.grey,
-                      ),
-                    ),
-                  )
-                : _buildListView(isDark),
-          ),
-        ],
-      ),
-      // BOTÓN FLOTANTE (Solo se muestra si hay vehículos, si está vacío ya hay un botón gigante)
-      floatingActionButton: _todosLosVehiculos.isNotEmpty
-          ? FloatingActionButton.extended(
-              backgroundColor: const Color(0xFFFFC107),
-              elevation: 4,
-              icon: const Icon(Icons.add, color: Colors.black87, size: 22),
-              label: const Text(
-                'Registrar vehículo',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              onPressed: () => _navegarAgregarEditar(),
+      body: _cargando
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF1565C0)),
             )
-          : null,
-    );
-  }
-
-  // --- TARJETA SUPERIOR AZUL ---
-  Widget _buildHeaderCard() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF42A5F5), Color(0xFF1565C0)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+          : _vehiculos.isEmpty
+          ? _buildEmptyState(isDark)
+          : _buildListaVehiculos(isDark),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF1565C0),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Nuevo Vehículo',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1565C0).withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.directions_car_rounded,
-              color: Colors.white,
-              size: 35,
-            ),
-          ),
-          const SizedBox(width: 15),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Mis vehículos',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Administra tu flota y sus mantenimientos',
-                  style: TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-        ],
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AgregarVehiculoScreen()),
+          );
+          if (result == true) _cargarVehiculos();
+        },
       ),
     );
   }
 
-  // --- DISEÑO CUANDO NO HAY VEHÍCULOS ---
   Widget _buildEmptyState(bool isDark) {
     return Center(
       child: Container(
@@ -298,9 +152,6 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
               offset: const Offset(0, 10),
             ),
           ],
-          border: Border.all(
-            color: isDark ? Colors.transparent : Colors.grey.shade200,
-          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -318,49 +169,16 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
               ),
             ),
             const SizedBox(height: 25),
-            Text(
-              'No hay vehículos registrados',
+            const Text(
+              'Sin vehículos registrados',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 15),
-            Text(
-              'Registra tu primer vehículo para comenzar a controlar sus servicios y mantenimientos.',
+            const Text(
+              'Agrega el primer vehículo a tu flota para comenzar el seguimiento.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white54 : Colors.grey.shade600,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 35),
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed: () => _navegarAgregarEditar(),
-                icon: const Icon(Icons.add, color: Colors.black87),
-                label: const Text(
-                  'Agregar vehículo',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFC107),
-                  elevation: 5,
-                  shadowColor: const Color(0xFFFFC107).withValues(alpha: 0.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                ),
-              ),
+              style: TextStyle(color: Colors.grey, height: 1.5),
             ),
           ],
         ),
@@ -368,19 +186,15 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
     );
   }
 
-  // --- LISTA DE VEHÍCULOS ---
-  Widget _buildListView(bool isDark) {
+  Widget _buildListaVehiculos(bool isDark) {
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(
-        top: 10,
-        bottom: 80,
-      ), // Margen inferior para el FAB
-      itemCount: _vehiculosFiltrados.length,
+      padding: const EdgeInsets.only(top: 15, bottom: 90, left: 20, right: 20),
+      itemCount: _vehiculos.length,
       itemBuilder: (context, index) {
-        final v = _vehiculosFiltrados[index];
+        final v = _vehiculos[index];
         return Container(
-          margin: const EdgeInsets.only(bottom: 15, left: 20, right: 20),
+          margin: const EdgeInsets.only(bottom: 15),
           decoration: BoxDecoration(
             color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -391,90 +205,87 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
                 offset: const Offset(0, 5),
               ),
             ],
+            border: const Border(
+              left: BorderSide(color: Color(0xFF1565C0), width: 5),
+            ),
           ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => _navegarAgregarEditar(v),
-              child: Padding(
-                padding: const EdgeInsets.all(18.0),
-                child: Row(
+          child: Padding(
+            padding: const EdgeInsets.all(18.0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1565C0).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Icon(
+                    Icons.directions_car_rounded,
+                    color: Color(0xFF1565C0),
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        v.placa,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          color: isDark ? Colors.white : Colors.black87,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '${v.marca} ${v.modelo}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Año: ${v.anio}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(15),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit_rounded,
+                        color: Colors.blueGrey,
                       ),
-                      child: const Icon(
-                        Icons.directions_car_rounded,
-                        color: Color(0xFF1565C0),
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${v.marca} ${v.modelo}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 17,
-                              color: isDark ? Colors.white : Colors.black87,
-                            ),
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AgregarVehiculoScreen(vehiculo: v),
                           ),
-                          const SizedBox(height: 5),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  v.placa,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black54,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Año: ${v.anio}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark
-                                      ? Colors.white54
-                                      : Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                        );
+                        if (result == true) _cargarVehiculos();
+                      },
                     ),
                     IconButton(
                       icon: const Icon(
-                        Icons.delete_outline_rounded,
+                        Icons.delete_rounded,
                         color: Colors.redAccent,
                       ),
                       onPressed: () => _eliminarVehiculo(v.id!),
                     ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
         );

@@ -361,7 +361,9 @@ class _FAQItemWidgetState extends State<_FAQItemWidget>
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1565C0).withOpacity(0.1),
+                              color: const Color(
+                                0xFF1565C0,
+                              ).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(

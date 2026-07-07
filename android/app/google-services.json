@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "590737593890",
+    "project_id": "motocheck-ee3f5",
+    "storage_bucket": "motocheck-ee3f5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:590737593890:android:df30530a02a20940909c7b",
+        "android_client_info": {
+          "package_name": "com.example.control_de_mototaxis_o_taxis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "590737593890-npjpcpc0vgv17l390h0kd4gjo1bmr6vi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpMX5aewKgLDP0H7XoLmlONaFfH19H2yo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "590737593890-npjpcpc0vgv17l390h0kd4gjo1bmr6vi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "590737593890-qe02ff2qq4cesoq9l84ehk3u633sb3d8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.controlDeMototaxisOTaxis"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

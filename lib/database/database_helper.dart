@@ -1,144 +1,102 @@
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/vehiculo.dart';
 import '../models/mantenimiento.dart';
 
 class DatabaseHelper {
-  static Database? _database;
-
-  static Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDB();
-    return _database!;
-  }
-
-  static Future<Database> _initDB() async {
-    String path = join(await getDatabasesPath(), 'motocheck.db');
-
-    return await openDatabase(
-      path,
-      version: 3,
-      onCreate: (db, version) async {
-        await db.execute(
-          'CREATE TABLE vehiculos(id INTEGER PRIMARY KEY AUTOINCREMENT, placa TEXT, marca TEXT, modelo TEXT, anio INTEGER, color TEXT)',
-        );
-        await db.execute(
-          'CREATE TABLE mantenimientos(id INTEGER PRIMARY KEY AUTOINCREMENT, vehiculoPlaca TEXT, falla TEXT, fecha TEXT, estado TEXT)',
-        );
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await db.execute(
-            'CREATE TABLE mantenimientos(id INTEGER PRIMARY KEY AUTOINCREMENT, vehiculoPlaca TEXT, falla TEXT, fecha TEXT, estado TEXT)',
-          );
-        }
-        if (oldVersion < 3) {
-          try {
-            await db.execute('ALTER TABLE vehiculos ADD COLUMN color TEXT');
-          } catch (e) {
-            assert(true, "Columna ya existente: $e");
-          }
-        }
-      },
-    );
-  }
+  static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // ==========================================
-  // --- MÓDULO VEHÍCULOS ---
+  // --- MÓDULO VEHÍCULOS (NUBE) ---
   // ==========================================
-
-  static Future<int> insertVehiculo(Vehiculo vehiculo) async {
-    final db = await database;
-    return await db.insert(
-      'vehiculos',
-      vehiculo.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  static Future<void> insertVehiculo(Vehiculo vehiculo) async {
+    if (vehiculo.id == null) {
+      await _db.collection('vehiculos').add(vehiculo.toMap());
+    } else {
+      await _db
+          .collection('vehiculos')
+          .doc(vehiculo.id)
+          .update(vehiculo.toMap());
+    }
   }
 
   static Future<List<Vehiculo>> obtenerVehiculos() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('vehiculos');
-    return List.generate(maps.length, (i) => Vehiculo.fromMap(maps[i]));
+    final snapshot = await _db.collection('vehiculos').get();
+    // Solucionado: Se eliminó el "as Map<String, dynamic>" innecesario
+    return snapshot.docs
+        .map((doc) => Vehiculo.fromMap(doc.data(), doc.id))
+        .toList();
   }
 
-  static Future<int> updateVehiculo(Vehiculo vehiculo) async {
-    final db = await database;
-    return await db.update(
-      'vehiculos',
-      vehiculo.toMap(),
-      where: 'id = ?',
-      whereArgs: [vehiculo.id],
-    );
+  static Future<void> updateVehiculo(Vehiculo vehiculo) async {
+    if (vehiculo.id != null) {
+      await _db
+          .collection('vehiculos')
+          .doc(vehiculo.id)
+          .update(vehiculo.toMap());
+    }
   }
 
-  static Future<int> deleteVehiculo(int id) async {
-    final db = await database;
-    return await db.delete('vehiculos', where: 'id = ?', whereArgs: [id]);
+  static Future<void> deleteVehiculo(String id) async {
+    await _db.collection('vehiculos').doc(id).delete();
   }
 
   // ==========================================
-  // --- MÓDULO MANTENIMIENTOS ---
+  // --- MÓDULO MANTENIMIENTOS (NUBE) ---
   // ==========================================
-
-  static Future<int> insertMantenimiento(Mantenimiento mant) async {
-    final db = await database;
-    return await db.insert(
-      'mantenimientos',
-      mant.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  static Future<void> insertMantenimiento(Mantenimiento mant) async {
+    if (mant.id == null) {
+      await _db.collection('mantenimientos').add(mant.toMap());
+    } else {
+      await _db.collection('mantenimientos').doc(mant.id).update(mant.toMap());
+    }
   }
 
   static Future<List<Mantenimiento>> obtenerMantenimientos() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('mantenimientos');
-    return List.generate(maps.length, (i) => Mantenimiento.fromMap(maps[i]));
+    final snapshot = await _db.collection('mantenimientos').get();
+    // Solucionado: Se eliminó el "as Map<String, dynamic>" innecesario
+    return snapshot.docs
+        .map((doc) => Mantenimiento.fromMap(doc.data(), doc.id))
+        .toList();
   }
 
-  // --- NUEVA FUNCIÓN PARA ELIMINAR AUTOMÁTICAMENTE ---
-  static Future<int> deleteMantenimiento(int id) async {
-    final db = await database;
-    return await db.delete('mantenimientos', where: 'id = ?', whereArgs: [id]);
+  static Future<void> deleteMantenimiento(String id) async {
+    await _db.collection('mantenimientos').doc(id).delete();
   }
 
   // ==========================================
   // --- CONTADORES PARA EL DASHBOARD ---
   // ==========================================
-
   static Future<int> contarVehiculos() async {
-    final db = await database;
-    return Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM vehiculos'),
-        ) ??
-        0;
+    final snapshot = await _db.collection('vehiculos').count().get();
+    return snapshot.count ?? 0;
   }
 
   static Future<int> contarMantenimientos() async {
-    final db = await database;
-    return Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM mantenimientos'),
-        ) ??
-        0;
+    final snapshot = await _db.collection('mantenimientos').count().get();
+    return snapshot.count ?? 0;
   }
 
   static Future<int> contarPendientes() async {
-    final db = await database;
-    return Sqflite.firstIntValue(
-          await db.rawQuery(
-            "SELECT COUNT(*) FROM mantenimientos WHERE estado = 'Pendiente'",
-          ),
-        ) ??
-        0;
+    final snapshot = await _db
+        .collection('mantenimientos')
+        .where('estado', isEqualTo: 'Pendiente')
+        .count()
+        .get();
+    return snapshot.count ?? 0;
   }
 
   static Future<int> contarAtendidos() async {
-    final db = await database;
-    return Sqflite.firstIntValue(
-          await db.rawQuery(
-            "SELECT COUNT(*) FROM mantenimientos WHERE estado = 'Atendido'",
-          ),
-        ) ??
-        0;
+    final atendidos = await _db
+        .collection('mantenimientos')
+        .where('estado', isEqualTo: 'Atendido')
+        .count()
+        .get();
+    final finalizados = await _db
+        .collection('mantenimientos')
+        .where('estado', isEqualTo: 'Finalizado')
+        .count()
+        .get();
+
+    return (atendidos.count ?? 0) + (finalizados.count ?? 0);
   }
 }

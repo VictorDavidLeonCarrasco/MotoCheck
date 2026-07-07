@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -7,7 +9,6 @@ import '../../providers/app_provider.dart';
 import 'agregar_mantenimiento_screen.dart';
 
 class MantenimientosScreen extends StatefulWidget {
-  // --- NUEVO: Control de permisos ---
   final bool esPersonalTaller;
   const MantenimientosScreen({super.key, this.esPersonalTaller = true});
 
@@ -30,16 +31,14 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
     final mantenimientos = await DatabaseHelper.obtenerMantenimientos();
     if (mounted) {
       setState(() {
+        // Ordenamos para que se agrupen visualmente por estado
         mantenimientos.sort((a, b) => a.estado.compareTo(b.estado));
-
-        // --- SEPARAMOS LAS LISTAS ---
         _activos = mantenimientos
             .where((m) => m.estado != 'Finalizado')
             .toList();
         _finalizados = mantenimientos
             .where((m) => m.estado == 'Finalizado')
             .toList();
-
         _cargando = false;
       });
     }
@@ -88,7 +87,6 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
   }
 
   void _mostrarSelectorEstado(Mantenimiento mant) {
-    // Si no es taller, bloqueamos el menú de edición
     if (!widget.esPersonalTaller) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -179,7 +177,6 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       onTap: () async {
         Navigator.pop(context);
-
         if (!esActual) {
           if (nuevoEstado == 'Finalizado') {
             final confirmar = await showDialog<bool>(
@@ -209,13 +206,13 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
             );
 
             if (confirmar == true) {
-              // ACTUALIZAMOS EL ESTADO EN LUGAR DE BORRARLO PARA CONSERVAR EL HISTORIAL
               final updatedMant = Mantenimiento(
                 id: mant.id,
                 vehiculoPlaca: mant.vehiculoPlaca,
                 falla: mant.falla,
                 fecha: mant.fecha,
                 estado: 'Finalizado',
+                fotoUrl: mant.fotoUrl,
               );
               await DatabaseHelper.insertMantenimiento(updatedMant);
               await _cargarMantenimientos();
@@ -228,6 +225,7 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
               falla: mant.falla,
               fecha: mant.fecha,
               estado: nuevoEstado,
+              fotoUrl: mant.fotoUrl,
             );
             await DatabaseHelper.insertMantenimiento(updatedMant);
             await _cargarMantenimientos();
@@ -242,7 +240,6 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // --- ENVOLVEMOS LA PANTALLA EN UN TAB CONTROLLER ---
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -250,7 +247,6 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
         body: Column(
           children: [
             _buildHeaderCard(),
-            // --- BARRA DE PESTAÑAS ---
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
@@ -283,14 +279,12 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
                     )
                   : TabBarView(
                       children: [
-                        // Pestaña 1: Activos
                         _activos.isEmpty
                             ? _buildEmptyState(
                                 isDark,
                                 'No hay servicios en curso',
                               )
                             : _buildListView(_activos, isDark),
-                        // Pestaña 2: Finalizados
                         _finalizados.isEmpty
                             ? _buildEmptyState(
                                 isDark,
@@ -302,7 +296,7 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
             ),
           ],
         ),
-        floatingActionButton: (widget.esPersonalTaller && _activos.isNotEmpty)
+        floatingActionButton: (widget.esPersonalTaller)
             ? FloatingActionButton.extended(
                 backgroundColor: Colors.orange,
                 elevation: 4,
@@ -434,32 +428,6 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 35),
-            if (widget.esPersonalTaller)
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton.icon(
-                  onPressed: _navegarAgregar,
-                  icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text(
-                    'Registrar falla',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    elevation: 5,
-                    shadowColor: Colors.orange.withValues(alpha: 0.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -473,12 +441,13 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
       itemCount: lista.length,
       itemBuilder: (context, index) {
         final m = lista[index];
-
         Color colorEstado = Colors.grey;
         if (m.estado == 'Pendiente') colorEstado = Colors.redAccent;
         if (m.estado == 'En proceso') colorEstado = Colors.blue;
         if (m.estado == 'Atendido') colorEstado = Colors.green;
         if (m.estado == 'Finalizado') colorEstado = Colors.blueGrey;
+
+        final bool tieneFoto = m.fotoUrl != null && m.fotoUrl!.isNotEmpty;
 
         return Container(
           margin: const EdgeInsets.only(bottom: 15, left: 20, right: 20),
@@ -497,6 +466,7 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
           child: Padding(
             padding: const EdgeInsets.all(18.0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -515,16 +485,53 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Placa: ${m.vehiculoPlaca}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 17,
-                          color: isDark ? Colors.white : Colors.black87,
-                          letterSpacing: 0.5,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Placa: ${m.vehiculoPlaca}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 17,
+                              color: isDark ? Colors.white : Colors.black87,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+
+                          // --- INDICADOR VISUAL DE FOTO LOCAL ---
+                          if (tieneFoto)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.photo_camera_rounded,
+                                    size: 12,
+                                    color: Colors.orange,
+                                  ),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Adjunto',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.orange,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 8),
                       Text(
                         m.falla,
                         style: TextStyle(
@@ -534,6 +541,32 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+
+                      // --- MINIATURA DE LA FOTO (Opcional, si no es Web) ---
+                      if (tieneFoto && !kIsWeb)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 10, bottom: 5),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: Image.file(
+                              File(m.fotoUrl!),
+                              height: 60,
+                              width: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    height: 60,
+                                    width: 100,
+                                    color: Colors.grey.shade200,
+                                    child: const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                            ),
+                          ),
+                        ),
+
                       const SizedBox(height: 10),
                       Text(
                         m.fecha,
@@ -590,8 +623,8 @@ class _MantenimientosScreenState extends State<MantenimientosScreen> {
                       ),
                     ),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Si es cliente o el servicio ya finalizó, quitamos el lápiz de edición visualmente
                         Icon(
                           (widget.esPersonalTaller && m.estado != 'Finalizado')
                               ? Icons.edit_note_rounded

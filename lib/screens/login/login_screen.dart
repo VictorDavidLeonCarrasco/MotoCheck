@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+
 import '../home/home_screen.dart';
+import '../registro/registro_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,245 +10,222 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-// Agregamos SingleTickerProviderStateMixin para manejar animaciones fluidas
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  String _selectedRole = 'Conductor';
+  final _idController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  final List<String> _roles = [
-    'Conductor',
-    'Dueño de vehículo',
-    'Taller mecánico',
-    'Administrador de flota',
-  ];
+  bool _ocultarPassword = true;
+  bool _isLoading = false;
 
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    // Animación de aparición suave al abrir la app
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _iniciarSesion() {
+  Future<void> _ingresar() async {
     if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
+      // Simulamos un pequeño tiempo de carga de red
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (!mounted) return;
+
+      String idIngresado = _idController.text.trim();
+      String passwordIngresado = _passwordController.text;
+
+      String rolDesignado = '';
+      String nombreDesignado = '';
+      String correoDesignado = '';
+
+      // ==========================================================
+      // LÓGICA DE ROLES Y CREDENCIALES
+      // ==========================================================
+      if (idIngresado == 'prueba@correo.com' && passwordIngresado == '123456') {
+        // PERFIL: TALLER MECÁNICO
+        rolDesignado = 'Taller mecánico';
+        nombreDesignado = 'Taller Oficial MotoCheck';
+        correoDesignado = idIngresado;
+      } else if (idIngresado == '76159606' && passwordIngresado == '123456') {
+        // PERFIL: CONDUCTOR
+        rolDesignado = 'Conductor';
+        nombreDesignado = 'Humberto Moises Rojas Capcha';
+        correoDesignado = 'DNI: $idIngresado';
+      } else {
+        // CREDENCIALES INCORRECTAS
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Usuario o contraseña incorrectos'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+        );
+        return; // Detenemos la ejecución aquí
+      }
+
+      // Si las credenciales son correctas, navegamos al Dashboard
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen(rol: _selectedRole)),
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(
+            rol: rolDesignado,
+            nombreUsuario: nombreDesignado,
+            correoUsuario: correoDesignado,
+          ),
+        ),
       );
     }
   }
 
-  // --- FUNCIÓN PARA ABRIR EL REGISTRO INTERACTIVO ---
-  void _mostrarRegistroBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const _RegistroInteractivo(),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [const Color(0xFF121212), const Color(0xFF0D47A1)]
-                : [const Color(0xFF42A5F5), const Color(0xFF1565C0)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 25.0,
-              vertical: 40.0,
-            ),
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Card(
-                elevation: 15,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
+      backgroundColor: const Color(0xFF1565C0),
+      body: Center(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          child: Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
-                color: isDark
-                    ? const Color(0xFF1E1E1E).withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95),
-                child: Padding(
-                  padding: const EdgeInsets.all(30.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment
-                          .start, // Alineación estructurada a la izquierda
-                      children: [
-                        // Logo alineado a la izquierda por diseño
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Icon(
-                            Icons.two_wheeler,
-                            size: 70,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF1565C0),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'MOTOCHECK',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: isDark
-                                ? Colors.white
-                                : const Color(0xFF1565C0),
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                        Text(
-                          'Control de Mantenimiento',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 35),
+              ],
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.two_wheeler_rounded,
+                    size: 60,
+                    color: Color(0xFF1565C0),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'MOTOCHECK',
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1565C0),
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    'Control de Mantenimiento',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
 
-                        DropdownButtonFormField<String>(
-                          initialValue: _selectedRole,
-                          dropdownColor: isDark
-                              ? const Color(0xFF1E1E1E)
-                              : Colors.white,
-                          decoration: _inputStyle(
-                            'Perfil de Usuario',
-                            Icons.badge,
-                            isDark,
-                          ),
-                          items: _roles
-                              .map(
-                                (String role) => DropdownMenuItem<String>(
-                                  value: role,
-                                  child: Text(
-                                    role,
-                                    style: TextStyle(
-                                      color: isDark
-                                          ? Colors.white
-                                          : Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (String? newValue) =>
-                              setState(() => _selectedRole = newValue!),
-                        ),
-                        const SizedBox(height: 15),
+                  // Se eliminó el Dropdown de roles para que el sistema lo asigne automáticamente
+                  const SizedBox(height: 40),
 
-                        TextFormField(
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                          decoration: _inputStyle(
-                            'Correo Electrónico',
-                            Icons.email_outlined,
-                            isDark,
-                          ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? 'Ingrese su correo'
-                              : null,
-                        ),
-                        const SizedBox(height: 15),
+                  TextFormField(
+                    controller: _idController,
+                    decoration: _inputStyle(
+                      'DNI o Correo Electrónico',
+                      Icons.contact_mail_rounded,
+                    ),
+                    validator: (v) =>
+                        v!.trim().isEmpty ? 'Ingrese sus datos' : null,
+                  ),
+                  const SizedBox(height: 20),
 
-                        TextFormField(
-                          style: TextStyle(
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                          decoration: _inputStyle(
-                            'Contraseña',
-                            Icons.lock_outline,
-                            isDark,
-                          ),
-                          obscureText: true,
-                          validator: (value) => (value == null || value.isEmpty)
-                              ? 'Ingrese su contraseña'
-                              : null,
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _ocultarPassword,
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña',
+                      prefixIcon: const Icon(
+                        Icons.lock_rounded,
+                        color: Color(0xFF1565C0),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _ocultarPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey,
                         ),
-                        const SizedBox(height: 35),
+                        onPressed: () => setState(
+                          () => _ocultarPassword = !_ocultarPassword,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF1565C0),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    validator: (v) =>
+                        v!.isEmpty ? 'Ingrese su contraseña' : null,
+                  ),
+                  const SizedBox(height: 35),
 
-                        SizedBox(
-                          width: double.infinity,
-                          height: 55,
-                          child: ElevatedButton(
-                            onPressed: _iniciarSesion,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFFFC107),
-                              foregroundColor: Colors.black87,
-                              elevation: 5,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _ingresar,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFFC107),
+                        foregroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        elevation: 5,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 25,
+                              height: 25,
+                              child: CircularProgressIndicator(
+                                color: Colors.black87,
+                                strokeWidth: 3,
                               ),
-                            ),
-                            child: const Text(
+                            )
+                          : const Text(
                               'INGRESAR',
                               style: TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w900,
                                 letterSpacing: 1.0,
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-
-                        Center(
-                          child: TextButton(
-                            onPressed: _mostrarRegistroBottomSheet,
-                            style: TextButton.styleFrom(
-                              foregroundColor: isDark
-                                  ? const Color(0xFF64B5F6)
-                                  : const Color(0xFF1565C0),
-                            ),
-                            child: const Text(
-                              '¿No tienes cuenta? Regístrate aquí',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 20),
+
+                  TextButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegistroScreen()),
+                    ),
+                    child: const Text(
+                      '¿No tienes cuenta? Regístrate aquí',
+                      style: TextStyle(
+                        color: Color(0xFF1565C0),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -257,285 +234,19 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  InputDecoration _inputStyle(String label, IconData icon, bool isDark) {
+  InputDecoration _inputStyle(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-      prefixIcon: Icon(
-        icon,
-        color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0),
-      ),
+      prefixIcon: Icon(icon, color: const Color(0xFF1565C0)),
       filled: true,
-      fillColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
+      fillColor: Colors.grey.shade50,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
-        borderSide: BorderSide(
-          color: isDark ? const Color(0xFF64B5F6) : const Color(0xFF1565C0),
-          width: 2,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(15),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// WIDGET DEL BOTTOM SHEET DE REGISTRO INTERACTIVO CON API DNI
-// ============================================================================
-class _RegistroInteractivo extends StatefulWidget {
-  const _RegistroInteractivo();
-
-  @override
-  State<_RegistroInteractivo> createState() => _RegistroInteractivoState();
-}
-
-class _RegistroInteractivoState extends State<_RegistroInteractivo> {
-  final _formKey = GlobalKey<FormState>();
-  final _dniController = TextEditingController();
-  final _nombreController = TextEditingController();
-  bool _cargandoDNI = false;
-
-  Future<void> _buscarDNI() async {
-    final dni = _dniController.text.trim();
-    if (dni.length != 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('El DNI debe tener 8 dígitos')),
-      );
-      return;
-    }
-
-    setState(() {
-      _cargandoDNI = true;
-      _nombreController.clear();
-    });
-
-    try {
-      // --- USO DE TOKEN PERSONAL APISPERU.COM ---
-      const String token =
-          'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImVtcGlyb3Rlc21pdEBvdXRsb29rLmNvbSJ9.XeRQDaLAKPy_MHPjRLJYFYs8ZL5W2-M_NWR8YZOlw08';
-      final url = Uri.parse(
-        'https://dniruc.apisperu.com/api/v1/dni/$dni?token=$token',
-      );
-
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-
-        // APISPERU devuelve los datos separados, los concatenamos
-        if (data['nombres'] != null) {
-          final nombreCompleto =
-              '${data['nombres']} ${data['apellidoPaterno']} ${data['apellidoMaterno']}';
-          setState(() => _nombreController.text = nombreCompleto);
-        } else {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudieron extraer los datos')),
-          );
-        }
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('DNI no encontrado o error en la API')),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error de conexión: $e')));
-    } finally {
-      setState(() => _cargandoDNI = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _dniController.dispose();
-    _nombreController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Detecta el teclado para empujar el BottomSheet hacia arriba y que no tape los inputs
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: bottomInset,
-        left: 20,
-        right: 20,
-        top: 20,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Pequeña barra indicadora de arrastre
-              Container(
-                width: 50,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Crear Nueva Cuenta',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 25),
-
-              // CAMPO DNI + BOTÓN DE BÚSQUEDA ANIMADO
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _dniController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 8,
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Ingresa tu DNI',
-                        counterText: "",
-                        filled: true,
-                        fillColor: isDark
-                            ? const Color(0xFF2C2C2C)
-                            : Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      validator: (v) => v!.isEmpty ? 'Requerido' : null,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 55,
-                    width: 60,
-                    child: ElevatedButton(
-                      onPressed: _cargandoDNI ? null : _buscarDNI,
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        backgroundColor: const Color(0xFF1565C0),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: _cargandoDNI
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : const Icon(Icons.search, size: 28),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-
-              // CAMPO NOMBRE AUTOCOMPLETADO
-              TextFormField(
-                controller: _nombreController,
-                readOnly:
-                    true, // El usuario no debería editar lo que viene del Reniec
-                style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                decoration: InputDecoration(
-                  labelText: 'Nombre Automático',
-                  prefixIcon: const Icon(Icons.person, color: Colors.grey),
-                  filled: true,
-                  fillColor: isDark
-                      ? const Color(0xFF2C2C2C)
-                      : Colors.grey[200],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                validator: (v) => v!.isEmpty ? 'Busca tu DNI primero' : null,
-              ),
-              const SizedBox(height: 15),
-
-              TextFormField(
-                style: TextStyle(color: isDark ? Colors.white : Colors.black),
-                decoration: InputDecoration(
-                  labelText: 'Crea una contraseña',
-                  prefixIcon: const Icon(Icons.lock, color: Colors.grey),
-                  filled: true,
-                  fillColor: isDark
-                      ? const Color(0xFF2C2C2C)
-                      : Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                obscureText: true,
-                validator: (v) => v!.isEmpty ? 'Requerido' : null,
-              ),
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.pop(context); // Cierra el BottomSheet
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Cuenta registrada con éxito. ¡Ya puedes ingresar!',
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  child: const Text(
-                    'COMPLETAR REGISTRO',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
+        borderSide: const BorderSide(color: Color(0xFF1565C0), width: 2),
       ),
     );
   }
